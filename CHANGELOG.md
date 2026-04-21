@@ -5,6 +5,32 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0] - Tue 21 Apr 2026 02:00:00 PM CDT
+
+### Added
+- **venv launcher (`run.ps1`)** — PowerShell script following the project-standard pattern
+  used across all `~\Projects` apps; auto-creates the virtual environment, validates that
+  the base Python executable still exists (recreates if broken), installs/updates
+  dependencies from `requirements.txt` only when the file is newer than the
+  `venv\.deps_installed` marker, then launches `src\main.py`
+
+### Fixed
+- **PyQt6 version pin** — removed `PyQt6==6.4.2` / `PyQt6-sip==13.4.1` hard pins from
+  `requirements.txt`; the 6.4.2 bindings are incompatible with the current `PyQt6-Qt6`
+  runtime (6.11.0), causing a DLL load failure on import. Changed to `PyQt6>=6.4.2` so
+  pip installs a consistent bindings + runtime pair. Verified: mutagen 1.47.0 and
+  PyQt6/Qt 6.11.0 import cleanly; GUI shell launches successfully via `.\run.ps1`
+- **pip self-upgrade error** — `run.ps1` was calling `pip install --upgrade pip` which
+  fails because pip cannot replace itself while running; changed to
+  `python -m pip install --upgrade pip`
+
+### Technical
+- venv located at `venv\` (excluded from git via `.gitignore`)
+- Dependency install marker at `venv\.deps_installed`; touch `requirements.txt` to force
+  a reinstall on next `.\run.ps1` run
+
+---
+
 ## [0.0.1] - Tue 21 Apr 2026 01:00:00 PM CDT
 
 ### Added
@@ -58,5 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v0.1.0** - Tue 21 Apr 2026: venv launcher, PyQt6 version fix, pip self-upgrade fix;
+  GUI shell confirmed launching via `.\run.ps1`
 - **v0.0.1** - Tue 21 Apr 2026: Initial scaffold — project structure, core utilities,
   Mutagen pre-flight, Mode system foundation, working shell window
