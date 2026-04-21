@@ -1,0 +1,4 @@
+mutagen>=1.47.0
+PyQt6==6.4.2
+PyQt6-sip==13.4.1
+pyqt-app-info @ git+https://github.com/juren53/pyqt-app-info.git
