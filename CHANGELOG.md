@@ -5,6 +5,47 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - Tue 21 Apr 2026 03:00:00 PM CDT
+
+### Added
+- **Phase 2 — Audio info + metadata read**
+
+- **`audio_utils.py`** — `get_audio_info(path)` returns a dict of human-readable
+  audio stream properties (duration, bitrate, sample rate, channels, format, file size,
+  modified date) sourced from `mutagen.File().info` and `os.stat`
+
+- **`metadata.py`** — `MetadataManager` with mode-aware field mappings built dynamically
+  from the active mode spec in `config`; `load_from_file(path)` reads ID3 frames via
+  Mutagen handling standard frames, `COMM`, `TXXX:desc`, and `IPLS` (flattened to
+  "role: name; …" string); `_sanitize_value()` ported from tag-writer; `export_to_json()`
+  and `import_from_json()` stubs; `save_to_file()` stubbed for Phase 3
+
+- **`widgets/audio_panel.py`** — `AudioPanel` right-column panel mirroring tag-writer's
+  `ImageViewer`; APIC frame extracted via `tags.getall('APIC')` → `QPixmap.loadFromData()`,
+  scaled with `KeepAspectRatio`; music-note `♪` placeholder when no art is present; green/grey
+  status indicator dot; scrollable HTML file info table (duration, bitrate, sample rate,
+  channels, format, file size, modified date)
+
+- **`widgets/metadata_panel.py`** — `MetadataPanel` form fields built dynamically from the
+  active mode's field spec (`QLineEdit` for `"widget":"line"`, `QTextEdit` for `"widget":"text"`);
+  character counter with orange/red warning thresholds for text fields; arrow-key event filter
+  (prevents Up/Down from propagating to main window); `update_from_manager()` and
+  `update_manager_from_ui()`; Write Metadata button (shows Phase 3 notice until implemented)
+
+- **Splitter UI** — `main.py` rebuilt around `QSplitter(Horizontal)` with `MetadataPanel`
+  (left, 660px) and `AudioPanel` (right, 440px); `load_file(path)` wires both panels;
+  File › Open menu item and toolbar Open button (Ctrl+O); arrow-key stubs for Phase 4
+  navigation; restores last-used file on startup
+
+### Technical
+- `widgets/__init__.py` now exports `AudioPanel` and `MetadataPanel`
+- `MetadataManager._rebuild_from_mode()` called on init and on mode switch; new built-in
+  modes merge automatically without a config reset
+- IPLS frame special-cased in `MetadataManager._read_frame()` — `frame.people` list
+  flattened to a display string; all other frames delegated to `safe_get_text()`
+
+---
+
 ## [0.1.0] - Tue 21 Apr 2026 02:00:00 PM CDT
 
 ### Added
@@ -84,6 +125,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v0.2.0** - Tue 21 Apr 2026: Phase 2 — audio info panel, metadata read, splitter UI,
+  AudioPanel with album art (APIC), MetadataPanel with dynamic mode-driven form fields
 - **v0.1.0** - Tue 21 Apr 2026: venv launcher, PyQt6 version fix, pip self-upgrade fix;
   GUI shell confirmed launching via `.\run.ps1`
 - **v0.0.1** - Tue 21 Apr 2026: Initial scaffold — project structure, core utilities,
