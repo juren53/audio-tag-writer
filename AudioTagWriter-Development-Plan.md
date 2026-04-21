@@ -124,7 +124,7 @@ C:\Users\juren\Projects\audio-tag-writer\
 ├── requirements.txt
 ├── audio-tag-writer.spec                   # PyInstaller spec
 ├── build_exe.ps1                           # Build script
-├── DEVELOPMENT_PLAN.md
+├── AudioTagWriter-Development-Plan.md
 └── TOOL_COMPARISON_exiftool-vs-ffmpeg.md
 ```
 
