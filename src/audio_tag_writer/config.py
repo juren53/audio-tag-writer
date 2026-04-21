@@ -206,11 +206,12 @@ class Config:
             self.update_check_frequency = data.get('update_check_frequency', 86400)
             self.active_mode = data.get('active_mode', 'Archival Recording')
 
-            # Merge saved modes over defaults so new built-in modes appear automatically
+            # Always use current DEFAULT_MODES for built-in modes so frame-ID changes
+            # (schema migrations) take effect immediately.  User-added custom modes
+            # (not present in DEFAULT_MODES) are preserved from the saved config.
             saved_modes = data.get('modes', {})
             for name, fields in DEFAULT_MODES.items():
-                if name not in saved_modes:
-                    saved_modes[name] = list(fields)
+                saved_modes[name] = list(fields)
             self.modes = saved_modes
 
             logger.debug(f"Configuration loaded from {self.config_file}")

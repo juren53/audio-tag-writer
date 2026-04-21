@@ -151,11 +151,10 @@ class MetadataManager:
             value = self._values.get(label, '').strip()
             self._write_frame(tags, frame_id, value)
 
-        if ext == '.mp3':
-            tags.update_to_v23()
-            audio.save(v2_version=3)
-        else:
-            audio.save()
+        # Enforce ID3v2.3 for both MP3 and WAV — TRDA and IPLS are v2.3-only frames
+        # and are silently dropped by the v2.4 encoder if we don't do this.
+        tags.update_to_v23()
+        audio.save(v2_version=3)
 
         logger.info(f"Saved metadata to '{path}'")
         return True
