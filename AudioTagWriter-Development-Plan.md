@@ -27,7 +27,7 @@ where audio-specific behavior differs.
 | GUI framework | PyQt6 | PyQt6 (same) |
 | Metadata backend | ExifTool (IPTC/XMP) | **Mutagen** (ID3) |
 | File types | JPG, TIFF, PNG | MP3, WAV, OGG, FLAC |
-| Side panel | Image thumbnail + resolution | Audio info (duration, bitrate, etc.) |
+| Side panel | Image thumbnail + resolution | Album art (APIC) + audio info (duration, bitrate, etc.) |
 | Metadata standard | 11 IPTC fields | 10 ID3 fields (see table below) |
 | Config file | `~/.tag_writer_config.json` | `~/.audio_tag_writer_config.json` |
 | Package name | `tag_writer` | `audio_tag_writer` |
@@ -54,9 +54,9 @@ where audio-specific behavior differs.
 **Replaced (new implementation):**
 - `exiftool_utils.py` → **`mutagen_utils.py`** — thin Mutagen wrapper with error handling
 - `image_utils.py` → **`audio_utils.py`** — reads duration, bitrate, format from `mutagen.File().info`
-- `widgets/image_viewer.py` → `widgets/audio_panel.py` — displays audio file info
+- `widgets/image_viewer.py` → `widgets/audio_panel.py` — displays album art (APIC frame) thumbnail + audio file info below
 - `widgets/full_image_viewer.py` → removed (no full-size viewer equivalent for audio)
-- `widgets/metadata_panel.py` → new field set (9 ID3 fields instead of 11 IPTC)
+- `widgets/metadata_panel.py` → new field set (10 ID3 fields instead of 11 IPTC)
 
 ---
 
@@ -111,7 +111,7 @@ C:\Users\juren\Projects\audio-tag-writer\
 │       ├── help.py                         # HelpMixin — about, changelog
 │       └── updates.py                      # UpdatesMixin — GitHub version checker
 │       └── widgets/
-│           ├── audio_panel.py              # AudioPanel — file info display
+│           ├── audio_panel.py              # AudioPanel — album art (APIC) + file info display
 │           └── metadata_panel.py           # MetadataPanel — ID3 form (10 fields) + write button
 ├── assets/
 │   └── ICON_atw.ico / ICON_atw.png         # App icon
@@ -217,24 +217,36 @@ No ExifTool call needed. All data comes from Mutagen + `os.path`.
 
 ## AudioPanel Widget
 
-Replaces `image_viewer.py`. Displays a non-interactive info block for the loaded file:
+Replaces `image_viewer.py`. Mirrors the tag-writer thumbnail panel — album art on top,
+file info below — occupying the right column of the main window.
 
 ```
-┌──────────────────────────────────────┐
-│  [audio file icon]                   │
-│                                      │
-│  SR59-185.mp3                        │
-│  Duration:    3:42                   │
-│  Bitrate:     128 kbps               │
-│  Sample Rate: 44100 Hz               │
-│  Channels:    Mono                   │
-│  Format:      MP3                    │
-│  File Size:   3.6 MB                 │
-│  Modified:    2023-11-02             │
-└──────────────────────────────────────┘
+┌──────────────────────────┐
+│                          │
+│      [Album Art]         │  ← APIC frame extracted via Mutagen,
+│   scaled to fit ~220px   │    scaled with aspect ratio preserved.
+│                          │    Falls back to a generic audio icon
+│                          │    if no APIC frame is present.
+└──────────────────────────┘
+● Art embedded             │  ← status indicator (green dot = art present,
+                           │    grey = no art)
+SR59-185.mp3
+Duration:    3:42
+Bitrate:     128 kbps
+Sample Rate: 44100 Hz
+Channels:    Mono
+Format:      MP3
+File Size:   3.6 MB
+Modified:    2023-11-02
 ```
 
-All info sourced from `audio_utils.get_audio_info()` (Mutagen + os.path).
+**Album art extraction:**
+- Read APIC frame via `audio.tags.getall('APIC')` — use first frame if multiple exist.
+- Convert raw bytes to `QPixmap` via `QPixmap.loadFromData(apic.data)`.
+- Scale with `Qt.KeepAspectRatio` to fit the panel width (~220 px).
+- If no APIC frame: display a generic audio file icon from `assets/`.
+
+**File info** sourced from `audio_utils.get_audio_info()` (Mutagen + `os.path`).
 
 **Optional (Phase 5+):** Play/Stop button using `QMediaPlayer` / `QAudioOutput` from
 `PyQt6.QtMultimedia`. Defer to a future phase; leave a clearly marked stub.
@@ -244,27 +256,32 @@ All info sourced from `audio_utils.get_audio_info()` (Mutagen + os.path).
 ## UI Layout
 
 ```
-┌─────────────────────────────────────────────────────┐
-│ Menu Bar (File, Edit, View, Tools, Help)            │
-├─────────────────────────────────────────────────────┤
-│ Toolbar (Open, Save, Export, Import, Theme)         │
-├─────────────────┬───────────────────────────────────┤
-│  AudioPanel     │  MetadataPanel (Form)              │
-│  (file info)    │  Title:       [__________________] │
-│                 │  Description: [__________________] │
-│                 │               0/1000 characters    │
-│                 │  Accession #: [__________________] │
-│                 │  Speakers:    [__________________] │
-│                 │  Date:        [__________________] │
-│                 │  Restrictions:[__________________] │
-│                 │  Location:    [__________________] │
-│                 │  Production:  [__________________] │
-│                 │  Orig File:   [__________________] │
-│                 │  Credit:      [__________________] │
-│                 │  [  Write Metadata  ]              │
-├─────────────────┴───────────────────────────────────┤
-│ Status bar (filename · format · file size)          │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│ Menu Bar (File, Edit, View, Tools, Help)                         │
+├──────────────────────────────────────────────────────────────────┤
+│ Toolbar (Open, Save, Export, Import, Theme)                      │
+├─────────────────────────────────────┬────────────────────────────┤
+│  MetadataPanel (Form)               │  AudioPanel (Right)        │
+│                                     │  ┌──────────────────────┐  │
+│  Title:       [__________________]  │  │                      │  │
+│  Description: [__________________]  │  │    [Album Art]       │  │
+│               0/1000 characters     │  │    APIC frame        │  │
+│  Accession #: [__________________]  │  │    thumbnail         │  │
+│  Speakers:    [__________________]  │  │                      │  │
+│  Date:        [__________________]  │  └──────────────────────┘  │
+│  Restrictions:[__________________]  │  ● Art embedded / No art   │
+│  Location:    [__________________]  │                            │
+│  Production:  [__________________]  │  SR59-185.mp3              │
+│  Orig File:   [__________________]  │  Duration:    3:42         │
+│  Credit:      [__________________]  │  Bitrate:     128 kbps     │
+│                                     │  Sample Rate: 44100 Hz     │
+│  [  Write Metadata  ]               │  Channels:    Mono         │
+│                                     │  Format:      MP3          │
+│                                     │  File Size:   3.6 MB       │
+│                                     │  Modified:    2023-11-02   │
+├─────────────────────────────────────┴────────────────────────────┤
+│ Status bar (filename · format · file size)                       │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -317,8 +334,9 @@ All info sourced from `audio_utils.get_audio_info()` (Mutagen + os.path).
    channels, format, file size, modified date (via Mutagen + os.path)
 2. `metadata.py` — `MetadataManager` with `field_mappings` for 9 ID3 fields;
    `load_from_file(path)` reads frames via Mutagen; `_sanitize_value()` ported from tag-writer
-3. `widgets/audio_panel.py` — `AudioPanel(QWidget)` with labels for all info fields;
-   `display_audio(path, info_dict)` updates labels
+3. `widgets/audio_panel.py` — `AudioPanel(QWidget)` with album art display (APIC frame →
+   `QPixmap.loadFromData`; fallback to generic icon) + status indicator + file info labels;
+   `display_audio(path, info_dict, tags)` updates art and labels
 4. `widgets/metadata_panel.py` — `MetadataPanel(QWidget)` with 10 `QLineEdit` / `QTextEdit`
    fields; `update_from_manager(manager)` populates form (read-only display for now)
 5. Wire `NavigationMixin.load_file()` stub: calls `MetadataManager.load_from_file()`,
