@@ -77,7 +77,7 @@ elseif ((Get-Item $Requirements).LastWriteTime -gt (Get-Item $Marker).LastWriteT
 
 if ($installDeps) {
     Write-Host "[$AppName] Installing dependencies..."
-    pip install --upgrade pip -q
+    python -m pip install --upgrade pip -q
     pip install -r $Requirements -q
     New-Item -ItemType File -Path $Marker -Force | Out-Null
 }
