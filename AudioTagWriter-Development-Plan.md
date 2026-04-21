@@ -172,6 +172,81 @@ represent the most user-editable archival fields (static/computed fields are exc
 
 ---
 
+## Mode Feature
+
+The Mode selector configures which ID3 fields appear in the MetadataPanel and what labels
+they carry. Different recording types call for different metadata lineups; switching modes
+redraws the form without reloading the file.
+
+### Built-in Modes
+
+| Field Label | Archival Recording | Music | Scientific |
+|-------------|-------------------|-------|------------|
+| Title | TIT2 | TIT2 | TIT2 |
+| Description / Comment | COMM | COMM | COMM |
+| Accession Number | TALB | — | TALB |
+| Speakers / Artist | IPLS | TPE1 | TXXX:Researcher |
+| Date Recorded | TRDA | TDRC | TRDA |
+| Restrictions / Copyright | TCOP | TCOP | TCOP |
+| Location | TLOC | — | TLOC |
+| Production/Copyright | TPUB | — | TPUB |
+| Original Filename | TOFN | — | — |
+| Credit | TXXX:Credit | TXXX:Credit | TXXX:Credit |
+| Album | — | TALB | — |
+| Track Number | — | TRCK | — |
+| Genre | — | TCON | — |
+| Composer | — | TCOM | — |
+| Album Artist | — | TPE2 | — |
+| Subject / Species | — | — | TXXX:Subject |
+| Equipment | — | — | TXXX:Equipment |
+| Collection | — | — | TIT1 |
+
+Each mode entry specifies:
+- **label** — display name shown in the form
+- **frame_id** — ID3 frame or `TXXX:desc` key
+- **widget** — `QLineEdit` or `QTextEdit` (multi-line for Description)
+- **max_chars** — character cap for sanitization (default 2000; Description 1000)
+
+### User-Configurable Modes
+
+Modes are stored in `~/.audio_tag_writer_config.json` under a `"modes"` key. The user can:
+- Rename any mode
+- Reorder fields within a mode
+- Add or remove fields from a mode (choosing from the full ID3 frame catalogue)
+- Create new custom modes
+- Reset a built-in mode to its defaults
+
+A **Manage Modes** dialog (Tools menu) provides the UI for editing mode definitions.
+Switching the active mode via the toolbar dropdown takes effect immediately; the
+`MetadataPanel` rebuilds its field list from the new mode's field spec.
+
+### Mode Config Structure
+
+```json
+"active_mode": "Archival Recording",
+"modes": {
+  "Archival Recording": [
+    {"label": "Title",               "frame_id": "TIT2",         "widget": "line"},
+    {"label": "Description",         "frame_id": "COMM",         "widget": "text", "max_chars": 1000},
+    {"label": "Accession Number",    "frame_id": "TALB",         "widget": "line"},
+    {"label": "Speakers",            "frame_id": "IPLS",         "widget": "line"},
+    {"label": "Date Recorded",       "frame_id": "TRDA",         "widget": "line"},
+    {"label": "Restrictions",        "frame_id": "TCOP",         "widget": "line"},
+    {"label": "Location",            "frame_id": "TLOC",         "widget": "line"},
+    {"label": "Production/Copyright","frame_id": "TPUB",         "widget": "line"},
+    {"label": "Original Filename",   "frame_id": "TOFN",         "widget": "line"},
+    {"label": "Credit",              "frame_id": "TXXX:Credit",  "widget": "line"}
+  ],
+  "Music": [ ... ],
+  "Scientific": [ ... ]
+}
+```
+
+The `MetadataManager` reads `active_mode` on startup and builds `field_mappings`
+dynamically from the mode's field spec rather than from a hardcoded list.
+
+---
+
 ## mutagen_utils.py
 
 Thin wrapper providing consistent error handling and format detection. Replaces
@@ -259,7 +334,7 @@ Modified:    2023-11-02
 ┌──────────────────────────────────────────────────────────────────┐
 │ Menu Bar (File, Edit, View, Tools, Help)                         │
 ├──────────────────────────────────────────────────────────────────┤
-│ Toolbar (Open, Save, Export, Import, Theme)                      │
+│ Toolbar (Open, Save, Export, Import, Theme, Mode: [Archival ▼])  │
 ├─────────────────────────────────────┬────────────────────────────┤
 │  MetadataPanel (Form)               │  AudioPanel (Right)        │
 │                                     │  ┌──────────────────────┐  │
@@ -300,9 +375,19 @@ Modified:    2023-11-02
   "ui_zoom_factor": 1.0,
   "window_geometry": [100, 100, 1024, 640],
   "auto_check_updates": true,
-  "skipped_versions": []
+  "skipped_versions": [],
+  "active_mode": "Archival Recording",
+  "modes": {
+    "Archival Recording": [ ... ],
+    "Music": [ ... ],
+    "Scientific": [ ... ]
+  }
 }
 ```
+
+`modes` is seeded from built-in defaults on first run and persists user edits across sessions.
+Built-in mode defaults are defined in `constants.py` and used to populate `modes` if the key
+is absent or if the user resets a mode.
 
 ---
 
@@ -332,8 +417,9 @@ Modified:    2023-11-02
 
 1. `audio_utils.py` — `get_audio_info(path)` → dict with duration, bitrate, sample rate,
    channels, format, file size, modified date (via Mutagen + os.path)
-2. `metadata.py` — `MetadataManager` with `field_mappings` for 9 ID3 fields;
-   `load_from_file(path)` reads frames via Mutagen; `_sanitize_value()` ported from tag-writer
+2. `metadata.py` — `MetadataManager` with `field_mappings` built from active mode's field spec
+   (defaults to Archival Recording); `load_from_file(path)` reads frames via Mutagen;
+   `_sanitize_value()` ported from tag-writer
 3. `widgets/audio_panel.py` — `AudioPanel(QWidget)` with album art display (APIC frame →
    `QPixmap.loadFromData`; fallback to generic icon) + status indicator + file info labels;
    `display_audio(path, info_dict, tags)` updates art and labels
@@ -353,7 +439,7 @@ Modified:    2023-11-02
 1. `MetadataPanel` — enable editing; add "Write Metadata" button;
    `update_manager_from_ui()` pushes form values back to manager;
    character count on Description field (0/1000)
-2. `MetadataManager.save_to_file(path)` — builds Mutagen frame objects for all 9 fields;
+2. `MetadataManager.save_to_file(path)` — builds Mutagen frame objects for all fields in the active mode;
    calls `audio.tags.update_to_v23()` and `audio.save(v2_version=3)`
 3. `file_ops.py` — `on_save()`, `on_export()` (JSON), `on_import()` (JSON),
    `on_view_all_tags()` (table dialog listing all raw Mutagen frames with values)
@@ -415,6 +501,33 @@ external tools installed.
 
 ---
 
+### Phase 7 — Modes
+
+**Goal:** User can switch metadata field sets via a mode dropdown; modes are user-configurable.
+
+1. `constants.py` — add `DEFAULT_MODES` dict with full field specs for Archival Recording,
+   Music, and Scientific built-in modes
+2. `config.py` — seed `"modes"` key from `DEFAULT_MODES` on first run or missing key;
+   add `get_active_mode()`, `set_active_mode()`, `get_mode_fields()`, `save_modes()`
+3. `metadata.py` — refactor `field_mappings` to be built dynamically from
+   `config.get_mode_fields(active_mode)` rather than hardcoded; add `reload_mode(mode_name)`
+4. `widgets/metadata_panel.py` — add `rebuild_fields(field_specs)` to tear down and
+   recreate form widgets when mode changes; preserve unsaved edits with a confirm dialog
+5. `menu.py` / toolbar — add Mode dropdown (`QComboBox`) to toolbar listing all mode names;
+   switching fires `reload_mode()` on `MetadataManager` and `rebuild_fields()` on `MetadataPanel`
+6. **Manage Modes dialog** (`widgets/manage_modes_dialog.py`) — accessible from Tools menu:
+   - List of modes with add/rename/delete/reset-to-default controls
+   - Per-mode field editor: reorder rows (drag), add field (frame_id + label + widget type),
+     remove field, set max_chars
+   - Changes written to config on OK; cancelled edits are discarded
+7. `test_metadata.py` — add mode-switching tests: verify field_mappings rebuild correctly
+   for each built-in mode; verify custom mode round-trips through config
+
+**Deliverable:** Toolbar mode dropdown switches form fields live; Manage Modes dialog
+allows full customization; custom modes persist across sessions.
+
+---
+
 ## Key Design Decisions
 
 ### Mutagen as metadata backend (not ExifTool, not FFmpeg)
@@ -442,11 +555,19 @@ PyQt6 ships `QMediaPlayer`/`QAudioOutput` with no extra deps, so playback is fea
 Deferred because it adds testing complexity and is not needed for the core tagging use case.
 Leave a clearly marked stub in `AudioPanel`.
 
-### 10 fields, not all 22
+### 10 fields (Archival Recording mode), not all 22
 
 The `audio-tags-09.py` tag set includes static/computed fields (URLs, script name, DDMM date
-fragments) that an archivist would never manually edit. The form exposes only the 10 fields
-relevant to record-by-record correction. The "View All Tags" dialog surfaces the rest read-only.
+fragments) that an archivist would never manually edit. The form exposes only the fields
+relevant to record-by-record correction for the active mode. The "View All Tags" dialog
+surfaces all raw frames read-only regardless of mode.
+
+### Mode field specs stored in config, defaults in constants
+
+Mode definitions live in `~/.audio_tag_writer_config.json` so the user owns them. Built-in
+defaults in `constants.py` serve as the factory reset. This avoids a separate config file
+format while keeping defaults recoverable. The `MetadataManager` never hard-codes field lists;
+it always reads from the active mode spec, so adding a new mode requires no code changes.
 
 ---
 
@@ -477,4 +598,4 @@ spot-check and correct individual records where the CSV data was incomplete or i
 
 ---
 
-Updated: 2026-04-21
+Updated: 2026-04-21 (added Mode feature)
