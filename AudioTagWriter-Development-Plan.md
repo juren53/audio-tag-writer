@@ -28,7 +28,7 @@ where audio-specific behavior differs.
 | Metadata backend | ExifTool (IPTC/XMP) | **Mutagen** (ID3) |
 | File types | JPG, TIFF, PNG | MP3, WAV, OGG, FLAC |
 | Side panel | Image thumbnail + resolution | Audio info (duration, bitrate, etc.) |
-| Metadata standard | 11 IPTC fields | 9 ID3 fields (see table below) |
+| Metadata standard | 11 IPTC fields | 10 ID3 fields (see table below) |
 | Config file | `~/.tag_writer_config.json` | `~/.audio_tag_writer_config.json` |
 | Package name | `tag_writer` | `audio_tag_writer` |
 | Architecture | Mixin composition | Mixin composition (same pattern) |
@@ -45,7 +45,7 @@ where audio-specific behavior differs.
 - `menu.py` — MenuMixin (adapted for audio-specific actions)
 
 **Adapted (audio-specific changes):**
-- `metadata.py` → ID3 field_mappings with Mutagen frame objects instead of ExifTool tags
+- `metadata.py` → ID3 field_mappings (10 fields) with Mutagen frame objects instead of ExifTool tags
 - `file_utils.py` → filters for `.mp3`, `.wav`, `.ogg`, `.flac` instead of images
 - `navigation.py` → same logic, calls `load_file()` for audio files
 - `file_ops.py` → save/export/import adapted; rotate/rename removed; add "View All Tags"
@@ -112,7 +112,7 @@ C:\Users\juren\Projects\audio-tag-writer\
 │       └── updates.py                      # UpdatesMixin — GitHub version checker
 │       └── widgets/
 │           ├── audio_panel.py              # AudioPanel — file info display
-│           └── metadata_panel.py           # MetadataPanel — ID3 form + write button
+│           └── metadata_panel.py           # MetadataPanel — ID3 form (10 fields) + write button
 ├── assets/
 │   └── ICON_atw.ico / ICON_atw.png         # App icon
 ├── tests/
@@ -134,7 +134,7 @@ Note: no `tools/` directory. No external binary is bundled.
 
 ## ID3 Field Mappings
 
-These 9 fields form the metadata edit form. They are derived from `audio-tags-09.py` v0.09 and
+These 10 fields form the metadata edit form. They are derived from `audio-tags-09.py` v0.09 and
 represent the most user-editable archival fields (static/computed fields are excluded from the UI).
 
 | Form Label | ID3 Frame | Mutagen Class | Source CSV Column |
@@ -148,6 +148,7 @@ represent the most user-editable archival fields (static/computed fields are exc
 | **Location** | `TLOC` | `mutagen.id3.TLOC` | `Place` |
 | **Production/Copyright** | `TPUB` | `mutagen.id3.TPUB` | `Production and Copyright` |
 | **Original Filename** | `TOFN` | `mutagen.id3.TOFN` | `Accession Number` + `.mp3` |
+| **Credit** | `TXXX:Credit` | `mutagen.id3.TXXX` | `Credit` |
 
 **Static fields** (written by the batch tool, readable but not in the edit form):
 - `TIT1` — Grouping: "NARA-HST-SRC Sound Recordings Collection"
@@ -259,6 +260,7 @@ All info sourced from `audio_utils.get_audio_info()` (Mutagen + os.path).
 │                 │  Location:    [__________________] │
 │                 │  Production:  [__________________] │
 │                 │  Orig File:   [__________________] │
+│                 │  Credit:      [__________________] │
 │                 │  [  Write Metadata  ]              │
 ├─────────────────┴───────────────────────────────────┤
 │ Status bar (filename · format · file size)          │
@@ -317,7 +319,7 @@ All info sourced from `audio_utils.get_audio_info()` (Mutagen + os.path).
    `load_from_file(path)` reads frames via Mutagen; `_sanitize_value()` ported from tag-writer
 3. `widgets/audio_panel.py` — `AudioPanel(QWidget)` with labels for all info fields;
    `display_audio(path, info_dict)` updates labels
-4. `widgets/metadata_panel.py` — `MetadataPanel(QWidget)` with 9 `QLineEdit` / `QTextEdit`
+4. `widgets/metadata_panel.py` — `MetadataPanel(QWidget)` with 10 `QLineEdit` / `QTextEdit`
    fields; `update_from_manager(manager)` populates form (read-only display for now)
 5. Wire `NavigationMixin.load_file()` stub: calls `MetadataManager.load_from_file()`,
    `AudioPanel.display_audio()`, `MetadataPanel.update_from_manager()`
@@ -422,10 +424,10 @@ PyQt6 ships `QMediaPlayer`/`QAudioOutput` with no extra deps, so playback is fea
 Deferred because it adds testing complexity and is not needed for the core tagging use case.
 Leave a clearly marked stub in `AudioPanel`.
 
-### 9 fields, not all 22
+### 10 fields, not all 22
 
 The `audio-tags-09.py` tag set includes static/computed fields (URLs, script name, DDMM date
-fragments) that an archivist would never manually edit. The form exposes only the 9 fields
+fragments) that an archivist would never manually edit. The form exposes only the 10 fields
 relevant to record-by-record correction. The "View All Tags" dialog surfaces the rest read-only.
 
 ---
@@ -457,4 +459,4 @@ spot-check and correct individual records where the CSV data was incomplete or i
 
 ---
 
-Updated: 2026-04-20
+Updated: 2026-04-21
