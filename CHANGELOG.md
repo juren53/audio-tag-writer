@@ -5,6 +5,46 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - Tue 21 Apr 2026 04:00:00 PM CDT
+
+### Added
+- **Phase 3 — Metadata write, JSON export/import, View All Tags**
+
+- **`metadata.py`** — `MetadataManager.save_to_file(path)` now fully implemented:
+  builds Mutagen frame objects for every field in the active mode; handles standard
+  text frames (`TIT2`, `TALB`, `TPE1`, etc.), `COMM` (lang=eng), `TXXX:desc` user-defined
+  frames, and `IPLS` (parses "role: name; …" display string back to `[[role, name], …]`
+  pairs); enforces ID3v2.3 on MP3 (`update_to_v23()` + `save(v2_version=3)`) and plain
+  save for WAV; raises `AudioFileError` with a clear message for OGG/FLAC (ID3 write
+  not supported for those formats); `add_tags()` called automatically when the file
+  has no existing tag header
+
+- **`file_ops.py`** — new `FileOpsMixin` class providing:
+  - `on_save()` — calls `update_manager_from_ui()` then `save_to_file()` with full error
+    dialog on `AudioFileError` or unexpected exception; updates status bar on success
+  - `on_export()` — prompts for JSON path (pre-filled with `<stem>_metadata.json`);
+    delegates to `MetadataManager.export_to_json()`
+  - `on_import()` — prompts for JSON path; imports via `MetadataManager.import_from_json()`;
+    refreshes `MetadataPanel` after import
+  - `on_view_all_tags()` — opens `AllTagsDialog`: searchable `QTableWidget` listing every
+    raw Mutagen frame (ID + decoded value) for the current file; binary frames (e.g. APIC)
+    shown as `<binary data N bytes>`
+
+- **`main.py`** — `MainWindow` now inherits `FileOpsMixin`; File menu extended with
+  Save Metadata (Ctrl+S), Export Metadata to JSON, Import Metadata from JSON; new Tools
+  menu with View All Tags (Ctrl+T); toolbar extended with Save, Export JSON, Import JSON,
+  and View Tags buttons
+
+- **`widgets/metadata_panel.py`** — `_on_write()` now calls `save_to_file()` with proper
+  `try/except AudioFileError` handling and success status message via `_set_main_status()`
+
+### Fixed
+- **`TLOC` frame** — `TLOC` is not a real ID3v2 frame (not in mutagen's frame registry).
+  Changed Location field in Archival Recording and Scientific modes from `frame_id: TLOC`
+  to `frame_id: TXXX:Location` (the correct TXXX user-defined text approach)
+
+---
+
 ## [0.2.0] - Tue 21 Apr 2026 03:00:00 PM CDT
 
 ### Added
@@ -125,6 +165,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v0.3.0** - Tue 21 Apr 2026: Phase 3 — metadata write (`save_to_file`), JSON export/import,
+  View All Tags dialog, Save/Export/Import toolbar + menu actions, TLOC→TXXX:Location fix
 - **v0.2.0** - Tue 21 Apr 2026: Phase 2 — audio info panel, metadata read, splitter UI,
   AudioPanel with album art (APIC), MetadataPanel with dynamic mode-driven form fields
 - **v0.1.0** - Tue 21 Apr 2026: venv launcher, PyQt6 version fix, pip self-upgrade fix;

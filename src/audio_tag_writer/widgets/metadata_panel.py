@@ -3,6 +3,7 @@ Audio Tag Writer - MetadataPanel widget (dynamic ID3 form).
 """
 
 import logging
+import os
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QPushButton,
@@ -194,12 +195,19 @@ class MetadataPanel(QWidget):
 
         self.update_manager_from_ui()
 
-        if self.metadata_manager.save_to_file(config.selected_file):
-            self._set_main_status("Metadata saved")
-        else:
-            QMessageBox.information(
-                self, "Not Yet Implemented",
-                "Metadata writing will be available in Phase 3."
+        from ..mutagen_utils import AudioFileError
+        try:
+            ok = self.metadata_manager.save_to_file(config.selected_file)
+        except AudioFileError as e:
+            QMessageBox.critical(self, "Save Error", str(e))
+            return
+        except Exception as e:
+            QMessageBox.critical(self, "Save Error", f"An unexpected error occurred:\n{e}")
+            return
+
+        if ok:
+            self._set_main_status(
+                f"Metadata saved  —  {os.path.basename(config.selected_file)}"
             )
 
     def _set_main_status(self, message: str):

@@ -7,6 +7,13 @@ import json
 import logging
 from datetime import datetime
 
+import mutagen
+from mutagen.id3 import (
+    ID3, ID3NoHeaderError,
+    TIT2, TALB, TPE1, TPE2, TCON, TCOM, TRCK, TDRC, TPUB, TCOP,
+    TOFN, TRDA, TIT1, TXXX, COMM, IPLS,
+)
+
 from .config import config
 from .mutagen_utils import open_audio, safe_get_text, AudioFileError
 
@@ -115,14 +122,111 @@ class MetadataManager:
             return ''
 
     # ------------------------------------------------------------------
-    # Write (Phase 3)
+    # Write
     # ------------------------------------------------------------------
 
     def save_to_file(self, path: str) -> bool:
         """Write current field values back to the audio file as ID3 tags."""
-        # Implemented in Phase 3
-        logger.warning("save_to_file() not yet implemented (Phase 3)")
-        return False
+        ext = os.path.splitext(path)[1].lower()
+        if ext not in ('.mp3', '.wav'):
+            logger.error(f"ID3 write not supported for format: {ext}")
+            raise AudioFileError(
+                f"Metadata writing is only supported for MP3 and WAV files.\n"
+                f"'{os.path.basename(path)}' is a {ext.lstrip('.').upper()} file."
+            )
+
+        try:
+            audio = open_audio(path)
+        except AudioFileError:
+            raise
+
+        if audio.tags is None:
+            audio.add_tags()
+
+        tags = audio.tags
+
+        for spec in self._field_specs:
+            label = spec['label']
+            frame_id = spec['frame_id']
+            value = self._values.get(label, '').strip()
+            self._write_frame(tags, frame_id, value)
+
+        if ext == '.mp3':
+            tags.update_to_v23()
+            audio.save(v2_version=3)
+        else:
+            audio.save()
+
+        logger.info(f"Saved metadata to '{path}'")
+        return True
+
+    # Standard frame classes keyed by frame ID
+    _SIMPLE_FRAME_MAP = {
+        'TIT2': TIT2, 'TALB': TALB, 'TPE1': TPE1, 'TPE2': TPE2,
+        'TCON': TCON, 'TCOM': TCOM, 'TRCK': TRCK, 'TDRC': TDRC,
+        'TPUB': TPUB, 'TCOP': TCOP, 'TOFN': TOFN,
+        'TRDA': TRDA, 'TIT1': TIT1,
+    }
+
+    def _write_frame(self, tags, frame_id: str, value: str):
+        """Set or delete a single ID3 frame based on value."""
+        if frame_id == 'IPLS':
+            self._write_ipls(tags, value)
+            return
+
+        if frame_id == 'COMM':
+            self._write_comm(tags, value)
+            return
+
+        if frame_id.startswith('TXXX:'):
+            desc = frame_id[5:]
+            key = f'TXXX:{desc}'
+            if value:
+                tags[key] = TXXX(encoding=3, desc=desc, text=[value])
+            else:
+                tags.delall(key)
+            return
+
+        frame_cls = self._SIMPLE_FRAME_MAP.get(frame_id)
+        if frame_cls is None:
+            logger.warning(f"Unknown frame ID '{frame_id}' — skipped")
+            return
+
+        if value:
+            tags[frame_id] = frame_cls(encoding=3, text=[value])
+        else:
+            tags.delall(frame_id)
+
+    def _write_comm(self, tags, value: str):
+        """Write or delete the COMM frame (lang=eng, desc='')."""
+        key = 'COMM::eng'
+        if value:
+            tags[key] = COMM(encoding=3, lang='eng', desc='', text=[value])
+        else:
+            tags.delall('COMM')
+
+    def _write_ipls(self, tags, value: str):
+        """
+        Write IPLS from a 'role: name; role: name' display string.
+        Pairs without a colon are stored as ('', name).
+        """
+        if not value:
+            tags.delall('IPLS')
+            return
+
+        people = []
+        for part in value.split(';'):
+            part = part.strip()
+            if ':' in part:
+                role, name = part.split(':', 1)
+                people.append([role.strip(), name.strip()])
+            elif part:
+                people.append(['', part])
+
+        if people:
+            tags['IPLS'] = IPLS(encoding=3, people=people)
+        else:
+            tags.delall('IPLS')
 
     # ------------------------------------------------------------------
     # Export / Import

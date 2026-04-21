@@ -3,10 +3,10 @@ Audio Tag Writer - Constants, version info, and default mode definitions.
 """
 
 APP_NAME = "Audio Tag Writer"
-APP_VERSION = "0.2.0"
-APP_TIMESTAMP = "2026-04-21 15:00"
+APP_VERSION = "0.3.0"
+APP_TIMESTAMP = "2026-04-21 16:00"
 APP_ORGANIZATION = "SynchroSoft"
-APP_USER_MODEL_ID = "SynchroSoft.AudioTagWriter.ATW.0.2.0"
+APP_USER_MODEL_ID = "SynchroSoft.AudioTagWriter.ATW.0.3.0"
 GITHUB_REPO = "juren53/audio-tag-writer"
 
 AUDIO_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.flac']
@@ -19,7 +19,7 @@ DEFAULT_MODES = {
         {"label": "Speakers",             "frame_id": "IPLS",            "widget": "line", "max_chars": 2000},
         {"label": "Date Recorded",        "frame_id": "TRDA",            "widget": "line", "max_chars": 2000},
         {"label": "Restrictions",         "frame_id": "TCOP",            "widget": "line", "max_chars": 2000},
-        {"label": "Location",             "frame_id": "TLOC",            "widget": "line", "max_chars": 2000},
+        {"label": "Location",             "frame_id": "TXXX:Location",   "widget": "line", "max_chars": 2000},
         {"label": "Production/Copyright", "frame_id": "TPUB",            "widget": "line", "max_chars": 2000},
         {"label": "Original Filename",    "frame_id": "TOFN",            "widget": "line", "max_chars": 2000},
         {"label": "Credit",               "frame_id": "TXXX:Credit",     "widget": "line", "max_chars": 2000},
@@ -42,7 +42,7 @@ DEFAULT_MODES = {
         {"label": "Accession Number","frame_id": "TALB",            "widget": "line", "max_chars": 2000},
         {"label": "Researcher",     "frame_id": "TXXX:Researcher",  "widget": "line", "max_chars": 2000},
         {"label": "Date Recorded",  "frame_id": "TRDA",             "widget": "line", "max_chars": 2000},
-        {"label": "Location",       "frame_id": "TLOC",             "widget": "line", "max_chars": 2000},
+        {"label": "Location",       "frame_id": "TXXX:Location",    "widget": "line", "max_chars": 2000},
         {"label": "Subject/Species","frame_id": "TXXX:Subject",     "widget": "line", "max_chars": 2000},
         {"label": "Equipment",      "frame_id": "TXXX:Equipment",   "widget": "line", "max_chars": 2000},
         {"label": "Collection",     "frame_id": "TIT1",             "widget": "line", "max_chars": 2000},

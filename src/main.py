@@ -29,6 +29,7 @@ from audio_tag_writer.mutagen_utils import check_mutagen_available, AudioFileErr
 from audio_tag_writer.metadata import MetadataManager
 from audio_tag_writer.audio_utils import get_audio_info
 from audio_tag_writer.widgets import AudioPanel, MetadataPanel
+from audio_tag_writer.file_ops import FileOpsMixin
 
 
 def _get_icon_path():
@@ -51,11 +52,10 @@ _AUDIO_FILTER = (
 )
 
 
-class MainWindow(QMainWindow):
+class MainWindow(FileOpsMixin, QMainWindow):
     """
-    Main application window — Phase 2.
+    Main application window — Phase 3.
     Splitter layout: MetadataPanel (left) | AudioPanel (right).
-    Mixins (navigation, file_ops, theme, help, updates) wired in later phases.
     """
 
     def __init__(self):
@@ -91,6 +91,7 @@ class MainWindow(QMainWindow):
     def _build_menu_bar(self):
         menubar = self.menuBar()
 
+        # File menu
         file_menu = menubar.addMenu("&File")
 
         open_action = QAction("&Open…", self)
@@ -98,12 +99,35 @@ class MainWindow(QMainWindow):
         open_action.triggered.connect(self.on_open_file)
         file_menu.addAction(open_action)
 
+        save_action = QAction("&Save Metadata", self)
+        save_action.setShortcut("Ctrl+S")
+        save_action.triggered.connect(self.on_save)
+        file_menu.addAction(save_action)
+
+        file_menu.addSeparator()
+
+        export_action = QAction("&Export Metadata to JSON…", self)
+        export_action.triggered.connect(self.on_export)
+        file_menu.addAction(export_action)
+
+        import_action = QAction("&Import Metadata from JSON…", self)
+        import_action.triggered.connect(self.on_import)
+        file_menu.addAction(import_action)
+
         file_menu.addSeparator()
 
         quit_action = QAction("&Quit", self)
         quit_action.setShortcut("Ctrl+Q")
         quit_action.triggered.connect(self.close)
         file_menu.addAction(quit_action)
+
+        # Tools menu
+        tools_menu = menubar.addMenu("&Tools")
+
+        view_tags_action = QAction("&View All Tags…", self)
+        view_tags_action.setShortcut("Ctrl+T")
+        view_tags_action.triggered.connect(self.on_view_all_tags)
+        tools_menu.addAction(view_tags_action)
 
     def _build_toolbar(self):
         tb = QToolBar("Main Toolbar")
@@ -114,6 +138,30 @@ class MainWindow(QMainWindow):
         open_action.setToolTip("Open an audio file  (Ctrl+O)")
         open_action.triggered.connect(self.on_open_file)
         tb.addAction(open_action)
+
+        save_action = QAction("Save", self)
+        save_action.setToolTip("Save metadata to file  (Ctrl+S)")
+        save_action.triggered.connect(self.on_save)
+        tb.addAction(save_action)
+
+        tb.addSeparator()
+
+        export_action = QAction("Export JSON", self)
+        export_action.setToolTip("Export metadata to JSON")
+        export_action.triggered.connect(self.on_export)
+        tb.addAction(export_action)
+
+        import_action = QAction("Import JSON", self)
+        import_action.setToolTip("Import metadata from JSON")
+        import_action.triggered.connect(self.on_import)
+        tb.addAction(import_action)
+
+        tb.addSeparator()
+
+        tags_action = QAction("View Tags", self)
+        tags_action.setToolTip("View all raw ID3 tags  (Ctrl+T)")
+        tags_action.triggered.connect(self.on_view_all_tags)
+        tb.addAction(tags_action)
 
     def _build_central(self):
         central = QWidget()
