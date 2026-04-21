@@ -1,0 +1,45 @@
+```python?code_reference&code_event_index=1
+python_code = """
+import csv
+from mutagen.easyid3 import EasyID3
+from mutagen.id3 import ID3NoHeaderError
+
+def update_audio_tags_from_csv(csv_filepath):
+    \"\"\"
+    Reads a CSV file and updates MP3 metadata using Mutagen.
+    Expected CSV format: filename,title,artist,album
+    \"\"\"
+    try:
+        with open(csv_filepath, mode='r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                file_path = row['filename']
+                try:
+                    # Load the file with EasyID3 for simple tag mapping
+                    try:
+                        audio = EasyID3(file_path)
+                    except ID3NoHeaderError:
+                        # If file has no ID3 header, create one
+                        audio = EasyID3()
+                        audio.save(file_path)
+                        audio = EasyID3(file_path)
+
+                    audio['title'] = row['title']
+                    audio['artist'] = row['artist']
+                    audio['album'] = row['album']
+                    
+                    audio.save()
+                    print(f"Successfully updated: {file_path}")
+                    
+                except Exception as e:
+                    print(f"Error processing {file_path}: {e}")
+                    
+    except FileNotFoundError:
+        print("CSV file not found.")
+
+# Example usage:
+# update_audio_tags_from_csv('my_audio_metadata.csv')
+"""
+
+with open("batch_tagger_mutagen.py", "w") as f:
+    f.write(python_code)
