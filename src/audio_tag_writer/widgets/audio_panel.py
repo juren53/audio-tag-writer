@@ -3,12 +3,14 @@ Audio Tag Writer - AudioPanel widget (album art + file info).
 """
 
 import logging
+import os
 
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QFrame, QScrollArea, QSizePolicy
+    QWidget, QVBoxLayout, QLabel, QFrame, QScrollArea, QSizePolicy,
+    QPushButton, QMessageBox
 )
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtCore import Qt, QTimer, QUrl
+from PyQt6.QtGui import QPixmap, QDesktopServices
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +27,7 @@ class AudioPanel(QWidget):
         super().__init__(parent)
         self.setMinimumWidth(240)
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        self._current_path = None
         self._setup_ui()
 
     # ------------------------------------------------------------------
@@ -50,6 +53,13 @@ class AudioPanel(QWidget):
         art_layout.addWidget(self._art_label)
 
         layout.addWidget(art_frame, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+        # Play button
+        self._play_button = QPushButton("▶  Play")
+        self._play_button.setToolTip("Open in system audio player")
+        self._play_button.setEnabled(False)
+        self._play_button.clicked.connect(self._on_play)
+        layout.addWidget(self._play_button, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         # Status indicator
         self._status_label = QLabel()
@@ -92,15 +102,30 @@ class AudioPanel(QWidget):
 
     def display_audio(self, path: str, info_dict: dict, tags):
         """Update panel with album art and file info for the loaded file."""
+        self._current_path = path
+        self._play_button.setEnabled(True)
         self._update_art(tags)
         self._update_info(info_dict)
 
     def clear(self):
         """Reset panel to empty/placeholder state."""
+        self._current_path = None
+        self._play_button.setEnabled(False)
         self._show_placeholder_art()
         self._status_label.setText("○  No file loaded")
         self._status_label.setStyleSheet("font-size: 8pt; color: grey;")
         self._info_label.setText(self._build_info_html({}))
+
+    def _on_play(self):
+        """Open the current file in the system default audio player."""
+        if not self._current_path or not os.path.isfile(self._current_path):
+            return
+        url = QUrl.fromLocalFile(self._current_path)
+        if not QDesktopServices.openUrl(url):
+            QMessageBox.warning(
+                self, "Playback Error",
+                f"Could not open the file with the system player:\n{self._current_path}"
+            )
 
     # ------------------------------------------------------------------
     # Album art
