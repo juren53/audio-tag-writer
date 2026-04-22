@@ -5,6 +5,34 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - Tue 21 Apr 2026 09:25:00 PM CDT
+
+### Added
+- **Play button** — `▶  Play` button added immediately below the album art frame
+  in `AudioPanel`; disabled until a file is loaded, then enabled by `display_audio()`;
+  uses `QDesktopServices.openUrl(QUrl.fromLocalFile())` to hand off to the OS-designated
+  audio player (Windows Media Player, VLC, Groove Music, etc.); shows a warning dialog
+  if the OS reports the open failed
+
+### Fixed
+- **Date Recorded not saving** — `TRDA` (ID3v2.3 Recording Dates frame) is silently
+  dropped by mutagen's default `update_to_v24()` translation on file load (no v2.4
+  equivalent). Changed frame mapping to `TXXX:DateRecorded` in Archival Recording and
+  Scientific modes; TXXX frames are version-agnostic and survive all translation passes
+- **Speakers not saving** — `IPLS` (v2.3 Involved People List) is converted to `TIPL`
+  (v2.4) by mutagen's default load translation. Data was written correctly to disk but
+  could not be read back. Fixed `_read_frame` to check both `IPLS` and `TIPL` so the
+  value is found regardless of which form mutagen presents after load
+- **Location frame skipped** — saved config (from Phase 2) retained `frame_id: TLOC`
+  for the Location field; `load_config()` was merging saved modes over defaults so the
+  stale spec persisted. Fixed by always overwriting built-in modes from `DEFAULT_MODES`
+  on load (user-added custom modes are still preserved)
+- **WAV files saving to ID3v2.4** — WAV save path was calling `audio.save()` without
+  `v2_version=3`, defaulting to ID3v2.4 and silently dropping v2.3-only frames. Changed
+  to `update_to_v23()` + `save(v2_version=3)` for both MP3 and WAV
+
+---
+
 ## [0.3.0] - Tue 21 Apr 2026 04:00:00 PM CDT
 
 ### Added
@@ -165,6 +193,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v0.3.1** - Tue 21 Apr 2026: Play button; fixes for Date Recorded (TRDA→TXXX), Speakers
+  (IPLS/TIPL), Location (TLOC stale config), WAV ID3v2.4 save
 - **v0.3.0** - Tue 21 Apr 2026: Phase 3 — metadata write (`save_to_file`), JSON export/import,
   View All Tags dialog, Save/Export/Import toolbar + menu actions, TLOC→TXXX:Location fix
 - **v0.2.0** - Tue 21 Apr 2026: Phase 2 — audio info panel, metadata read, splitter UI,
