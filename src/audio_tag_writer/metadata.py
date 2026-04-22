@@ -104,9 +104,11 @@ class MetadataManager:
             return ''
 
         try:
-            # IPLS — Involved People List; flatten to "role: name; ..." string
+            # IPLS — Involved People List; flatten to "role: name; ..." string.
+            # Mutagen's default translate-to-v2.4 on load converts IPLS → TIPL,
+            # so check both frame IDs.
             if frame_id == 'IPLS':
-                frame = tags.get('IPLS')
+                frame = tags.get('IPLS') or tags.get('TIPL')
                 if frame and hasattr(frame, 'people'):
                     parts = [
                         f"{p[0]}: {p[1]}" if p[0] else p[1]
