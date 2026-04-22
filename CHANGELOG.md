@@ -5,6 +5,17 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - Wed 22 Apr 2026
+
+### Added
+- **`run.sh`** — Bash launcher for Linux/macOS mirroring `run.ps1`; auto-creates the
+  virtual environment, validates that the base Python executable still exists (recreates
+  if broken), installs/updates dependencies from `requirements.txt` only when the file
+  is newer than the `venv/.deps_installed` marker, then launches `src/main.py`; passes
+  through any extra arguments via `"$@"`
+
+---
+
 ## [0.4.0] - Tue 21 Apr 2026 09:25:00 PM CDT
 
 ### Added
@@ -235,6 +246,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v0.4.1** - Wed 22 Apr 2026: Bash launcher `run.sh` for Linux/macOS (mirrors `run.ps1`)
 - **v0.4.0** - Tue 21 Apr 2026: Phase 4 — NavigationMixin, WindowMixin, MenuMixin; ←→ navigation,
   directory scanning, Recent Files/Dirs menus, geometry save/restore
 - **v0.3.1** - Tue 21 Apr 2026: Play button; fixes for Date Recorded (TRDA→TXXX), Speakers
