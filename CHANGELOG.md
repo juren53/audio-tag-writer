@@ -5,6 +5,48 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - Tue 21 Apr 2026 09:25:00 PM CDT
+
+### Added
+- **Phase 4 — Navigation + Full Menu**
+
+- **`navigation.py`** — `NavigationMixin` providing: `on_open()` (file dialog),
+  `on_open_directory()` (directory dialog → first audio file), `on_previous()` /
+  `on_next()` with directory looping, `load_file()` (replaces Phase 3 inline version —
+  now scans directory, tracks `current_file_index`, shows `filename · format · size [N/M]`
+  in status bar), `on_refresh()` (reload from disk), `on_clear()` (clear all fields),
+  `on_copy_path()` (FQFN to clipboard), `update_recent_menu()` /
+  `update_recent_directories_menu()` / `open_directory()` with clear-list actions
+
+- **`window.py`** — `WindowMixin` providing: `keyPressEvent()` (← → navigate,
+  F5 refresh), `save_window_geometry()` / `restore_window_geometry()` (persisted via
+  `config.window_geometry`; clamped to screen bounds), `closeEvent()` (saves geometry
+  + config, prevents double-close via `_is_closing` flag)
+
+- **`menu.py`** — `MenuMixin` providing `create_menu_bar()` and `create_toolbar()`:
+  - **File**: Open, Open Directory, ─, Recent Files ▶, Recent Directories ▶, ─,
+    Save Metadata (Ctrl+S), ─, Export/Import JSON, ─, Quit (Ctrl+Q)
+  - **Edit**: Clear Fields (Ctrl+L), ─, Copy Path to Clipboard (Ctrl+Shift+C)
+  - **View**: Refresh (F5), ─, View All Tags (Ctrl+T)
+  - **Help**: About, Changelog
+  - **Toolbar**: ◀ Prev | Open | Next ▶ | Save | Export JSON | Import JSON | View Tags
+    | [filename label]
+
+- **`main.py`** — `MainWindow` now inherits
+  `NavigationMixin, FileOpsMixin, MenuMixin, WindowMixin, QMainWindow`; inline menu,
+  toolbar, `load_file`, and key-handler code removed in favour of the mixins; window
+  geometry restored on startup; About and Changelog dialogs stubbed (Phase 5 wires
+  `help.py`)
+
+### Technical
+- Status bar left side now shows `filename · format · file_size [N/M]` on load
+- `set_status()` also updates the toolbar filename label
+- Config `directory_audio_files` populated on every `load_file()` call; `current_file_index`
+  set from the file's position in the sorted list
+- `_is_closing` guard prevents duplicate `closeEvent` handling
+
+---
+
 ## [0.3.1] - Tue 21 Apr 2026 09:25:00 PM CDT
 
 ### Added
@@ -193,6 +235,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v0.4.0** - Tue 21 Apr 2026: Phase 4 — NavigationMixin, WindowMixin, MenuMixin; ←→ navigation,
+  directory scanning, Recent Files/Dirs menus, geometry save/restore
 - **v0.3.1** - Tue 21 Apr 2026: Play button; fixes for Date Recorded (TRDA→TXXX), Speakers
   (IPLS/TIPL), Location (TLOC stale config), WAV ID3v2.4 save
 - **v0.3.0** - Tue 21 Apr 2026: Phase 3 — metadata write (`save_to_file`), JSON export/import,

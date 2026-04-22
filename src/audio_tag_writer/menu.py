@@ -1,0 +1,155 @@
+"""
+Audio Tag Writer - MenuMixin: create_menu_bar() and create_toolbar().
+"""
+
+from PyQt6.QtWidgets import QToolBar, QLabel
+from PyQt6.QtGui import QAction
+
+
+class MenuMixin:
+    """Mixin providing the full menu bar and toolbar."""
+
+    def create_menu_bar(self):
+        """Build the application menu bar."""
+        mb = self.menuBar()
+
+        # ── File ──────────────────────────────────────────────────────
+        file_menu = mb.addMenu("&File")
+
+        open_act = QAction("&Open…", self)
+        open_act.setShortcut("Ctrl+O")
+        open_act.triggered.connect(self.on_open)
+        file_menu.addAction(open_act)
+
+        open_dir_act = QAction("Open &Directory…", self)
+        open_dir_act.triggered.connect(self.on_open_directory)
+        file_menu.addAction(open_dir_act)
+
+        file_menu.addSeparator()
+
+        self.recent_menu = file_menu.addMenu("Recent &Files")
+        self.recent_directories_menu = file_menu.addMenu("Recent &Directories")
+        self.update_recent_menu()
+        self.update_recent_directories_menu()
+
+        file_menu.addSeparator()
+
+        save_act = QAction("&Save Metadata", self)
+        save_act.setShortcut("Ctrl+S")
+        save_act.triggered.connect(self.on_save)
+        file_menu.addAction(save_act)
+
+        file_menu.addSeparator()
+
+        export_act = QAction("&Export Metadata to JSON…", self)
+        export_act.triggered.connect(self.on_export)
+        file_menu.addAction(export_act)
+
+        import_act = QAction("&Import Metadata from JSON…", self)
+        import_act.triggered.connect(self.on_import)
+        file_menu.addAction(import_act)
+
+        file_menu.addSeparator()
+
+        quit_act = QAction("&Quit", self)
+        quit_act.setShortcut("Ctrl+Q")
+        quit_act.triggered.connect(self.close)
+        file_menu.addAction(quit_act)
+
+        # ── Edit ──────────────────────────────────────────────────────
+        edit_menu = mb.addMenu("&Edit")
+
+        clear_act = QAction("&Clear Fields", self)
+        clear_act.setShortcut("Ctrl+L")
+        clear_act.triggered.connect(self.on_clear)
+        edit_menu.addAction(clear_act)
+
+        edit_menu.addSeparator()
+
+        copy_path_act = QAction("Copy &Path to Clipboard", self)
+        copy_path_act.setShortcut("Ctrl+Shift+C")
+        copy_path_act.triggered.connect(self.on_copy_path)
+        edit_menu.addAction(copy_path_act)
+
+        # ── View ──────────────────────────────────────────────────────
+        view_menu = mb.addMenu("&View")
+
+        refresh_act = QAction("&Refresh", self)
+        refresh_act.setShortcut("F5")
+        refresh_act.triggered.connect(self.on_refresh)
+        view_menu.addAction(refresh_act)
+
+        view_menu.addSeparator()
+
+        tags_act = QAction("&View All Tags…", self)
+        tags_act.setShortcut("Ctrl+T")
+        tags_act.triggered.connect(self.on_view_all_tags)
+        view_menu.addAction(tags_act)
+
+        # ── Help ──────────────────────────────────────────────────────
+        help_menu = mb.addMenu("&Help")
+
+        about_act = QAction("&About…", self)
+        about_act.triggered.connect(self.on_about)
+        help_menu.addAction(about_act)
+
+        changelog_act = QAction("&Changelog…", self)
+        changelog_act.triggered.connect(self.on_changelog)
+        help_menu.addAction(changelog_act)
+
+    def create_toolbar(self):
+        """Build the application toolbar."""
+        tb = QToolBar("Main Toolbar")
+        tb.setMovable(False)
+        self.addToolBar(tb)
+
+        prev_act = QAction("◀  Prev", self)
+        prev_act.setToolTip("Previous file in directory  (←)")
+        prev_act.triggered.connect(self.on_previous)
+        tb.addAction(prev_act)
+
+        open_act = QAction("Open", self)
+        open_act.setToolTip("Open audio file  (Ctrl+O)")
+        open_act.triggered.connect(self.on_open)
+        tb.addAction(open_act)
+
+        next_act = QAction("Next  ▶", self)
+        next_act.setToolTip("Next file in directory  (→)")
+        next_act.triggered.connect(self.on_next)
+        tb.addAction(next_act)
+
+        tb.addSeparator()
+
+        save_act = QAction("Save", self)
+        save_act.setToolTip("Save metadata to file  (Ctrl+S)")
+        save_act.triggered.connect(self.on_save)
+        tb.addAction(save_act)
+
+        tb.addSeparator()
+
+        export_act = QAction("Export JSON", self)
+        export_act.setToolTip("Export metadata to JSON")
+        export_act.triggered.connect(self.on_export)
+        tb.addAction(export_act)
+
+        import_act = QAction("Import JSON", self)
+        import_act.setToolTip("Import metadata from JSON")
+        import_act.triggered.connect(self.on_import)
+        tb.addAction(import_act)
+
+        tb.addSeparator()
+
+        tags_act = QAction("View Tags", self)
+        tags_act.setToolTip("View all raw ID3 tags  (Ctrl+T)")
+        tags_act.triggered.connect(self.on_view_all_tags)
+        tb.addAction(tags_act)
+
+        tb.addSeparator()
+
+        self._toolbar_file_label = QLabel("  No file loaded")
+        tb.addWidget(self._toolbar_file_label)
+
+    def _update_toolbar_label(self, text: str):
+        """Update the filename label in the toolbar."""
+        if hasattr(self, '_toolbar_file_label'):
+            self._toolbar_file_label.setText(f"  {text}")

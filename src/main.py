@@ -15,21 +15,22 @@ logger = logging.getLogger(__name__)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from PyQt6.QtWidgets import (
-    QMainWindow, QApplication, QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QSplitter, QStatusBar, QMessageBox, QFileDialog,
-    QToolBar, QMenuBar, QMenu
+    QMainWindow, QApplication, QWidget, QVBoxLayout,
+    QLabel, QSplitter, QStatusBar, QMessageBox,
 )
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon, QAction
+from PyQt6.QtGui import QIcon
 
 from audio_tag_writer.constants import APP_NAME, APP_VERSION, APP_TIMESTAMP, APP_ORGANIZATION, AUDIO_EXTENSIONS
 from audio_tag_writer.config import config, SingleInstanceChecker
 from audio_tag_writer.platform import set_app_user_model_id, set_windows_taskbar_icon
 from audio_tag_writer.mutagen_utils import check_mutagen_available, AudioFileError
 from audio_tag_writer.metadata import MetadataManager
-from audio_tag_writer.audio_utils import get_audio_info
 from audio_tag_writer.widgets import AudioPanel, MetadataPanel
 from audio_tag_writer.file_ops import FileOpsMixin
+from audio_tag_writer.navigation import NavigationMixin
+from audio_tag_writer.window import WindowMixin
+from audio_tag_writer.menu import MenuMixin
 
 
 def _get_icon_path():
@@ -42,28 +43,21 @@ def _get_icon_path():
     return None
 
 
-_AUDIO_FILTER = (
-    "Audio Files (*.mp3 *.wav *.ogg *.flac);;"
-    "MP3 Files (*.mp3);;"
-    "WAV Files (*.wav);;"
-    "OGG Files (*.ogg);;"
-    "FLAC Files (*.flac);;"
-    "All Files (*)"
-)
-
-
-class MainWindow(FileOpsMixin, QMainWindow):
+class MainWindow(NavigationMixin, FileOpsMixin, MenuMixin, WindowMixin, QMainWindow):
     """
-    Main application window — Phase 3.
+    Main application window — Phase 4.
     Splitter layout: MetadataPanel (left) | AudioPanel (right).
+    Mixin chain: NavigationMixin → FileOpsMixin → MenuMixin → WindowMixin → QMainWindow
     """
 
     def __init__(self):
         super().__init__()
+        self._is_closing = False
         self.metadata_manager = MetadataManager()
         self._setup_ui()
+        self.restore_window_geometry()
         self._restore_last_file()
-        logger.info("Main window initialised")
+        logger.info("Main window initialised (Phase 4)")
 
     # ------------------------------------------------------------------
     # UI setup
@@ -83,85 +77,10 @@ class MainWindow(FileOpsMixin, QMainWindow):
         if icon_path:
             self.setWindowIcon(QIcon(icon_path))
 
-        self._build_menu_bar()
-        self._build_toolbar()
+        self.create_menu_bar()
+        self.create_toolbar()
         self._build_central()
         self._build_status_bar()
-
-    def _build_menu_bar(self):
-        menubar = self.menuBar()
-
-        # File menu
-        file_menu = menubar.addMenu("&File")
-
-        open_action = QAction("&Open…", self)
-        open_action.setShortcut("Ctrl+O")
-        open_action.triggered.connect(self.on_open_file)
-        file_menu.addAction(open_action)
-
-        save_action = QAction("&Save Metadata", self)
-        save_action.setShortcut("Ctrl+S")
-        save_action.triggered.connect(self.on_save)
-        file_menu.addAction(save_action)
-
-        file_menu.addSeparator()
-
-        export_action = QAction("&Export Metadata to JSON…", self)
-        export_action.triggered.connect(self.on_export)
-        file_menu.addAction(export_action)
-
-        import_action = QAction("&Import Metadata from JSON…", self)
-        import_action.triggered.connect(self.on_import)
-        file_menu.addAction(import_action)
-
-        file_menu.addSeparator()
-
-        quit_action = QAction("&Quit", self)
-        quit_action.setShortcut("Ctrl+Q")
-        quit_action.triggered.connect(self.close)
-        file_menu.addAction(quit_action)
-
-        # Tools menu
-        tools_menu = menubar.addMenu("&Tools")
-
-        view_tags_action = QAction("&View All Tags…", self)
-        view_tags_action.setShortcut("Ctrl+T")
-        view_tags_action.triggered.connect(self.on_view_all_tags)
-        tools_menu.addAction(view_tags_action)
-
-    def _build_toolbar(self):
-        tb = QToolBar("Main Toolbar")
-        tb.setMovable(False)
-        self.addToolBar(tb)
-
-        open_action = QAction("Open", self)
-        open_action.setToolTip("Open an audio file  (Ctrl+O)")
-        open_action.triggered.connect(self.on_open_file)
-        tb.addAction(open_action)
-
-        save_action = QAction("Save", self)
-        save_action.setToolTip("Save metadata to file  (Ctrl+S)")
-        save_action.triggered.connect(self.on_save)
-        tb.addAction(save_action)
-
-        tb.addSeparator()
-
-        export_action = QAction("Export JSON", self)
-        export_action.setToolTip("Export metadata to JSON")
-        export_action.triggered.connect(self.on_export)
-        tb.addAction(export_action)
-
-        import_action = QAction("Import JSON", self)
-        import_action.setToolTip("Import metadata from JSON")
-        import_action.triggered.connect(self.on_import)
-        tb.addAction(import_action)
-
-        tb.addSeparator()
-
-        tags_action = QAction("View Tags", self)
-        tags_action.setToolTip("View all raw ID3 tags  (Ctrl+T)")
-        tags_action.triggered.connect(self.on_view_all_tags)
-        tb.addAction(tags_action)
 
     def _build_central(self):
         central = QWidget()
@@ -188,81 +107,60 @@ class MainWindow(FileOpsMixin, QMainWindow):
         sb.addPermanentWidget(QLabel(f"Ver {APP_VERSION}  ({APP_TIMESTAMP})"))
 
     # ------------------------------------------------------------------
-    # File operations
-    # ------------------------------------------------------------------
-
-    def on_open_file(self):
-        """Show open-file dialog and load the selected file."""
-        start_dir = config.last_directory or os.path.expanduser("~")
-        path, _ = QFileDialog.getOpenFileName(
-            self, "Open Audio File", start_dir, _AUDIO_FILTER
-        )
-        if path:
-            self.load_file(path)
-
-    def load_file(self, path: str):
-        """Load audio info and metadata for the given file path."""
-        if not os.path.isfile(path):
-            logger.error(f"load_file: not a file: {path}")
-            return
-
-        config.selected_file = path
-        config.last_directory = os.path.dirname(path)
-        config.add_recent_file(path)
-
-        filename = os.path.basename(path)
-        self.set_status(f"Loading {filename}…")
-        self.setWindowTitle(f"{APP_NAME}  —  {filename}  v{APP_VERSION}")
-
-        # Audio stream info
-        info = get_audio_info(path)
-
-        # Metadata
-        ok = self.metadata_manager.load_from_file(path)
-        self.metadata_panel.update_from_manager()
-
-        # Right panel (art + info)
-        try:
-            from audio_tag_writer.mutagen_utils import open_audio
-            audio = open_audio(path)
-            tags = audio.tags
-        except AudioFileError:
-            tags = None
-
-        self.audio_panel.display_audio(path, info, tags)
-
-        if ok:
-            self.set_status(f"Loaded  {filename}")
-        else:
-            self.set_status(f"Loaded  {filename}  (no metadata tags found)")
-
-        logger.info(f"Loaded file: {path}")
-
-    def _restore_last_file(self):
-        """Re-open the last used file on startup if it still exists."""
-        if config.selected_file and os.path.exists(config.selected_file):
-            self.load_file(config.selected_file)
-
-    # ------------------------------------------------------------------
-    # Status bar helper
+    # Status bar helper (used by all mixins)
     # ------------------------------------------------------------------
 
     def set_status(self, message: str):
         self._status_label.setText(message)
+        self._update_toolbar_label(message)
 
     # ------------------------------------------------------------------
-    # Arrow-key navigation (wired to prev/next in Phase 4)
+    # Startup
     # ------------------------------------------------------------------
 
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key.Key_Left:
-            if hasattr(self, 'on_previous'):
-                self.on_previous()
-        elif event.key() == Qt.Key.Key_Right:
-            if hasattr(self, 'on_next'):
-                self.on_next()
+    def _restore_last_file(self):
+        """Re-open the last used file on startup if it still exists."""
+        if config.selected_file and os.path.isfile(config.selected_file):
+            self.load_file(config.selected_file)
+
+    # ------------------------------------------------------------------
+    # Help stubs (Phase 5 will wire these to help.py)
+    # ------------------------------------------------------------------
+
+    def on_about(self):
+        from audio_tag_writer.constants import APP_VERSION, APP_TIMESTAMP
+        QMessageBox.about(
+            self, f"About {APP_NAME}",
+            f"<b>{APP_NAME}</b>  v{APP_VERSION}<br>"
+            f"<br>"
+            f"ID3 metadata editor for audio files.<br>"
+            f"Built with PyQt6 + Mutagen.<br>"
+            f"<br>"
+            f"<small>{APP_TIMESTAMP}</small>"
+        )
+
+    def on_changelog(self):
+        changelog_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "CHANGELOG.md"
+        )
+        if os.path.isfile(changelog_path):
+            from PyQt6.QtWidgets import QDialog, QTextEdit, QPushButton, QVBoxLayout
+            dlg = QDialog(self)
+            dlg.setWindowTitle("Changelog")
+            dlg.resize(700, 500)
+            layout = QVBoxLayout(dlg)
+            text = QTextEdit()
+            text.setReadOnly(True)
+            with open(changelog_path, encoding='utf-8') as f:
+                text.setPlainText(f.read())
+            layout.addWidget(text)
+            btn = QPushButton("Close")
+            btn.clicked.connect(dlg.accept)
+            layout.addWidget(btn, alignment=Qt.AlignmentFlag.AlignRight)
+            dlg.exec()
         else:
-            super().keyPressEvent(event)
+            QMessageBox.information(self, "Changelog", "CHANGELOG.md not found.")
 
 
 # ------------------------------------------------------------------
