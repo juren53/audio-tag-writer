@@ -111,6 +111,81 @@ class FileOpsMixin:
         dlg.exec()
 
 
+    # ------------------------------------------------------------------
+    # Mode switching
+    # ------------------------------------------------------------------
+
+    def on_switch_mode(self, mode_name: str):
+        """Called when the mode combo selection changes."""
+        if not mode_name or mode_name == config.get_active_mode():
+            return
+
+        if self._has_unsaved_edits():
+            reply = QMessageBox.question(
+                self, "Unsaved Changes",
+                "There are unsaved edits in the current form.\n"
+                "Switch mode and discard them?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                if hasattr(self, 'mode_combo'):
+                    self.mode_combo.blockSignals(True)
+                    self.mode_combo.setCurrentText(config.get_active_mode())
+                    self.mode_combo.blockSignals(False)
+                return
+
+        config.set_active_mode(mode_name)
+        self.metadata_manager.reload_mode(mode_name)
+        self.metadata_panel.rebuild_fields()
+
+        if config.selected_file and os.path.isfile(config.selected_file):
+            self.load_file(config.selected_file)
+        else:
+            self.set_status(f"Mode: {mode_name}")
+
+    def _has_unsaved_edits(self) -> bool:
+        """Return True if any form field value differs from the loaded metadata."""
+        from PyQt6.QtWidgets import QTextEdit as _QTextEdit
+        for spec in self.metadata_manager.get_field_specs():
+            label = spec['label']
+            widget = self.metadata_panel._field_widgets.get(label)
+            if widget is None:
+                continue
+            ui_val = (widget.toPlainText() if isinstance(widget, _QTextEdit)
+                      else widget.text())
+            if ui_val != self.metadata_manager.get_field(label):
+                return True
+        return False
+
+    def on_manage_modes(self):
+        """Open the Manage Modes dialog and apply any changes."""
+        from .widgets.manage_modes_dialog import ManageModesDialog
+
+        dlg = ManageModesDialog(parent=self)
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        new_modes, new_active = dlg.get_result()
+        config.modes = new_modes
+        config.active_mode = new_active
+        config.save_config()
+
+        if hasattr(self, 'mode_combo'):
+            self.mode_combo.blockSignals(True)
+            self.mode_combo.clear()
+            self.mode_combo.addItems(list(config.modes.keys()))
+            self.mode_combo.setCurrentText(config.get_active_mode())
+            self.mode_combo.blockSignals(False)
+
+        self.metadata_manager.reload_mode(config.get_active_mode())
+        self.metadata_panel.rebuild_fields()
+
+        if config.selected_file and os.path.isfile(config.selected_file):
+            self.load_file(config.selected_file)
+        else:
+            self.set_status(f"Modes updated  —  Active: {config.get_active_mode()}")
+
+
 class AllTagsDialog(QDialog):
     """Searchable table of all raw Mutagen frames in the open file."""
 

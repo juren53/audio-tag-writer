@@ -2,8 +2,10 @@
 Audio Tag Writer - MenuMixin: create_menu_bar() and create_toolbar().
 """
 
-from PyQt6.QtWidgets import QToolBar, QLabel
+from PyQt6.QtWidgets import QToolBar, QLabel, QComboBox
 from PyQt6.QtGui import QAction, QKeySequence
+
+from .config import config
 
 
 class MenuMixin:
@@ -116,6 +118,14 @@ class MenuMixin:
         zoom_reset_act.triggered.connect(self.reset_zoom)
         view_menu.addAction(zoom_reset_act)
 
+        # ── Tools ─────────────────────────────────────────────────────
+        tools_menu = mb.addMenu("&Tools")
+
+        manage_modes_act = QAction("&Manage Modes…", self)
+        manage_modes_act.setToolTip("Add, rename, reorder or delete metadata modes")
+        manage_modes_act.triggered.connect(self.on_manage_modes)
+        tools_menu.addAction(manage_modes_act)
+
         # ── Help ──────────────────────────────────────────────────────
         help_menu = mb.addMenu("&Help")
 
@@ -179,6 +189,17 @@ class MenuMixin:
         tags_act.setToolTip("View all raw ID3 tags  (Ctrl+T)")
         tags_act.triggered.connect(self.on_view_all_tags)
         tb.addAction(tags_act)
+
+        tb.addSeparator()
+
+        tb.addWidget(QLabel("  Mode: "))
+        self.mode_combo = QComboBox()
+        self.mode_combo.setToolTip("Switch metadata field set")
+        self.mode_combo.setMinimumWidth(160)
+        self.mode_combo.addItems(list(config.modes.keys()))
+        self.mode_combo.setCurrentText(config.get_active_mode())
+        self.mode_combo.currentTextChanged.connect(self.on_switch_mode)
+        tb.addWidget(self.mode_combo)
 
         tb.addSeparator()
 

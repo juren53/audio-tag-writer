@@ -28,6 +28,8 @@ class MetadataPanel(QWidget):
         self._field_widgets = {}    # label -> QLineEdit | QTextEdit
         self._char_labels = {}      # label -> QLabel (for text widgets)
         self._all_text_fields = []  # all input widgets (for event filter)
+        self._scroll = None
+        self._outer_layout = None
         self._setup_ui()
         self._install_event_filters()
 
@@ -36,9 +38,17 @@ class MetadataPanel(QWidget):
     # ------------------------------------------------------------------
 
     def _setup_ui(self):
-        outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
+        self._outer_layout = QVBoxLayout(self)
+        self._outer_layout.setContentsMargins(0, 0, 0, 0)
 
+        self._build_form()
+
+        self.write_button = QPushButton("Write Metadata")
+        self.write_button.clicked.connect(self._on_write)
+        self._outer_layout.addWidget(self.write_button, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+    def _build_form(self):
+        """Build the form scroll area from the current mode's field specs."""
         form = QFormLayout()
         form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
         form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
@@ -60,18 +70,26 @@ class MetadataPanel(QWidget):
             self._field_widgets[label_text] = widget
             self._all_text_fields.append(widget)
 
-        # Wrap in scroll area
         form_widget = QWidget()
         form_widget.setLayout(form)
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setWidget(form_widget)
-        outer.addWidget(scroll, 1)
+        self._scroll = QScrollArea()
+        self._scroll.setWidgetResizable(True)
+        self._scroll.setWidget(form_widget)
+        self._outer_layout.insertWidget(0, self._scroll, 1)
 
-        # Write Metadata button
-        self.write_button = QPushButton("Write Metadata")
-        self.write_button.clicked.connect(self._on_write)
-        outer.addWidget(self.write_button, alignment=Qt.AlignmentFlag.AlignHCenter)
+    def rebuild_fields(self):
+        """Tear down and rebuild form widgets from the current mode spec."""
+        if self._scroll is not None:
+            self._outer_layout.removeWidget(self._scroll)
+            self._scroll.deleteLater()
+            self._scroll = None
+
+        self._field_widgets = {}
+        self._char_labels = {}
+        self._all_text_fields = []
+
+        self._build_form()
+        self._install_event_filters()
 
     def _make_text_widget(self, label, max_chars):
         """Build a QTextEdit with a character-count label below it."""
