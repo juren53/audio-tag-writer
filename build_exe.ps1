@@ -2,8 +2,6 @@
 # Usage: .\build_exe.ps1
 # Output: dist\audio-tag-writer.exe
 
-$ErrorActionPreference = "Stop"
-
 $ScriptDir  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $VenvPython = Join-Path $ScriptDir "venv\Scripts\python.exe"
 $VenvPip    = Join-Path $ScriptDir "venv\Scripts\pip.exe"
@@ -15,11 +13,12 @@ if (-not (Test-Path $VenvPython)) {
     exit 1
 }
 
-# ── Install PyInstaller if needed ─────────────────────────────────
-$piCheck = & $VenvPython -c "import PyInstaller" 2>&1
+# ── Ensure PyInstaller is installed (pip is a no-op if already present) ──────
+Write-Host "Ensuring PyInstaller is installed..."
+& $VenvPip install pyinstaller --quiet
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "Installing PyInstaller..."
-    & $VenvPip install pyinstaller --quiet
+    Write-Error "Failed to install PyInstaller."
+    exit 1
 }
 
 # ── Clean previous build artefacts ───────────────────────────────
