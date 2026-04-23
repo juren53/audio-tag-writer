@@ -1,3 +1,4 @@
 mutagen>=1.47.0
 PyQt6>=6.4.2
 pyqt-app-info @ git+https://github.com/juren53/pyqt-app-info.git
+pytest>=7.0

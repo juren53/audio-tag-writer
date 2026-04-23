@@ -5,6 +5,62 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - Wed 22 Apr 2026 09:51:00 PM CDT
+
+### Added
+- **Phase 6 — Tests + Distribution**
+
+- **`tests/conftest.py`** — Shared pytest fixtures: `real_mp3` (path to tagged HST MP3, skipped on
+  CI if not available), `mp3_copy` (writable temp copy for write tests), `tagged_id3`
+  (in-memory ID3 tag object with sample values)
+
+- **`tests/test_mutagen_utils.py`** — 11 tests covering `check_mutagen_available`,
+  `open_audio` (success, missing file, non-audio file), `safe_get_text` for standard
+  frames, TXXX frames, COMM frames, missing frames, and `None` tags
+
+- **`tests/test_audio_utils.py`** — 13 tests covering `get_audio_info`: dict key presence,
+  dash fallback for missing/unreadable files, format detection from extension, file size
+  formatting (B/KB/MB), plus integration tests against a real MP3 (duration M:SS format,
+  bitrate string, sample rate, channels, format)
+
+- **`tests/test_file_utils.py`** — 12 tests covering `get_audio_files`: empty/bad inputs,
+  extension filtering for all four types (.mp3/.wav/.ogg/.flac), case-insensitive extension
+  matching, non-audio exclusion, case-insensitive sort, full-path return
+
+- **`tests/test_config.py`** — 13 tests covering `Config`: default values, `add_recent_file`
+  (append, deduplication, cap at 10, ignore nonexistent), mode helpers (`get_mode_fields`,
+  `set_active_mode`, `reset_mode_to_default`), save/load roundtrip, built-in mode overwrite
+  of stale frame IDs (regression test for TLOC→TXXX:Location fix), custom mode preservation
+
+- **`tests/test_metadata.py`** — 22 tests covering `MetadataManager`: `_sanitize_value`
+  (whitespace, null bytes, CRLF normalisation, max_chars cap, non-string), `load_from_file`
+  (success, missing, path, title), IPLS frame flattening and TIPL fallback, OGG/FLAC error
+  guard, MP3 write+reload roundtrip for Title/Description/TXXX, ID3v2.3 version enforcement
+  on save, JSON export/import roundtrip
+
+- **`audio-tag-writer.spec`** — PyInstaller one-file spec; `src` on `pathex`; `assets/`
+  bundled as data; mutagen sub-packages listed as `hiddenimports`; `console=False`;
+  `ICON_atw.ico` as the EXE icon
+
+- **`build_exe.ps1`** — PowerShell build script: verifies venv, installs PyInstaller if needed,
+  cleans previous `build/` and `dist/` directories, runs `pyinstaller audio-tag-writer.spec`,
+  reports EXE path and file size on success
+
+- **`.github/workflows/ci.yml`** — GitHub Actions CI: runs on push/PR to master; matrix over
+  Python 3.11 and 3.12; installs `mutagen` + `pytest` only (no PyQt6 needed for unit tests);
+  executes `python -m pytest tests/ -v --tb=short`
+
+- **`requirements.txt`** — added `pytest>=7.0`
+
+### Technical
+- 72 tests, 72 passing on Python 3.12.10 (Windows dev machine)
+- Tests needing real MP3s (`real_mp3` / `mp3_copy` fixtures) auto-skip on CI where
+  the HST corpus is unavailable; the remaining tests run headlessly without PyQt6
+- ID3v2.3 enforcement verified at the mutagen tag version level
+  (`audio.tags.version == (2, 3, 0)`) in `test_save_uses_id3v23`
+
+---
+
 ## [0.5.0] - Wed 22 Apr 2026 07:35:00 PM CDT
 
 ### Added
@@ -295,6 +351,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v0.6.0** - Wed 22 Apr 2026: Phase 6 — 72-test pytest suite (mutagen_utils, audio_utils, file_utils,
+  config, metadata); PyInstaller spec + build_exe.ps1; GitHub Actions CI (Python 3.11 + 3.12)
 - **v0.5.0** - Wed 22 Apr 2026: Phase 5 — ThemeManager (8 themes), ThemeMixin (zoom, dark toggle,
   theme picker), HelpMixin (About + Changelog); View menu + toolbar zoom controls
 - **v0.4.1** - Wed 22 Apr 2026: Bash launcher `run.sh` for Linux/macOS (mirrors `run.ps1`)
