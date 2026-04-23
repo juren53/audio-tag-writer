@@ -13,6 +13,7 @@ a = Analysis(
     datas=[
         ('assets', 'assets'),
         ('CHANGELOG.md', '.'),
+        ('README.md', '.'),
     ],
     hiddenimports=[
         'mutagen',

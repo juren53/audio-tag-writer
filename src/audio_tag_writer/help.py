@@ -58,11 +58,50 @@ class HelpMixin:
                 f"<small>{APP_TIMESTAMP}</small>",
             )
 
+    _README_URL    = "https://github.com/juren53/audio-tag-writer/blob/master/README.md"
     _CHANGELOG_URL = "https://github.com/juren53/audio-tag-writer/blob/master/CHANGELOG.md"
+
+    def on_readme(self):
+        """Show README.md in a resizable dialog, falling back to the GitHub URL."""
+        path = self._find_file('README.md')
+        if path:
+            try:
+                dialog = QDialog(self)
+                dialog.setWindowTitle("README")
+                dialog.resize(800, 600)
+                dialog.setWindowFlags(
+                    Qt.WindowType.Window |
+                    Qt.WindowType.WindowMinimizeButtonHint |
+                    Qt.WindowType.WindowMaximizeButtonHint |
+                    Qt.WindowType.WindowCloseButtonHint
+                )
+                layout = QVBoxLayout(dialog)
+
+                text = QTextEdit()
+                text.setReadOnly(True)
+                with open(path, encoding='utf-8') as f:
+                    text.setMarkdown(f.read())
+                layout.addWidget(text)
+
+                btn = QPushButton("Close")
+                btn.clicked.connect(dialog.accept)
+                layout.addWidget(btn, alignment=Qt.AlignmentFlag.AlignRight)
+
+                dialog.exec()
+                return
+            except Exception as e:
+                logger.error(f"Error showing README: {e}")
+
+        import webbrowser
+        try:
+            webbrowser.open(self._README_URL)
+        except Exception as e:
+            logger.error(f"Error opening README URL: {e}")
+            QMessageBox.warning(self, "README", f"Could not open README.\n\nURL: {self._README_URL}")
 
     def on_changelog(self):
         """Show CHANGELOG.md locally, falling back to the GitHub URL."""
-        changelog_path = self._find_changelog()
+        changelog_path = self._find_file('CHANGELOG.md')
 
         if changelog_path:
             try:
@@ -105,16 +144,16 @@ class HelpMixin:
             )
 
     @staticmethod
-    def _find_changelog():
-        """Return the path to CHANGELOG.md or None if not found."""
+    def _find_file(filename):
+        """Locate a project-root file in the frozen EXE bundle or source tree."""
         # 1. Frozen EXE: PyInstaller extracts bundled data to sys._MEIPASS
         if getattr(sys, 'frozen', False):
-            candidate = os.path.join(sys._MEIPASS, 'CHANGELOG.md')
+            candidate = os.path.join(sys._MEIPASS, filename)
             if os.path.isfile(candidate):
                 return candidate
 
-        # 2. Source tree: two levels up from this file (src/audio_tag_writer/ → project root)
-        candidate = os.path.join(_project_root(), 'CHANGELOG.md')
+        # 2. Source tree: two levels up from src/audio_tag_writer/
+        candidate = os.path.join(_project_root(), filename)
         if os.path.isfile(candidate):
             return candidate
 

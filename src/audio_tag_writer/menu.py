@@ -119,13 +119,19 @@ class MenuMixin:
         # ── Help ──────────────────────────────────────────────────────
         help_menu = mb.addMenu("&Help")
 
-        about_act = QAction("&About…", self)
-        about_act.triggered.connect(self.on_about)
-        help_menu.addAction(about_act)
+        readme_act = QAction("&README…", self)
+        readme_act.triggered.connect(self.on_readme)
+        help_menu.addAction(readme_act)
 
         changelog_act = QAction("&Changelog…", self)
         changelog_act.triggered.connect(self.on_changelog)
         help_menu.addAction(changelog_act)
+
+        help_menu.addSeparator()
+
+        about_act = QAction("&About…", self)
+        about_act.triggered.connect(self.on_about)
+        help_menu.addAction(about_act)
 
     def create_toolbar(self):
         """Build the application toolbar."""
