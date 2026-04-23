@@ -215,7 +215,13 @@ class Config:
             self.update_check_frequency = data.get('update_check_frequency', 86400)
             self.active_mode = data.get('active_mode', 'Archival Recording')
             self.auto_detect_mode = data.get('auto_detect_mode', True)
-            self.mode_detect_frames = data.get('mode_detect_frames', dict(DEFAULT_DETECT_FRAMES))
+            saved_detect = data.get('mode_detect_frames', dict(DEFAULT_DETECT_FRAMES))
+            # Migrate: TPE1 was the original Music discriminator but fires on HSTL
+            # archival files (batch pipeline sets TPE1 = "Harry S. Truman Library").
+            # Replace with TRCK (Track Number), which is absent on archival/scientific.
+            if saved_detect.get('Music') == 'TPE1':
+                saved_detect['Music'] = DEFAULT_DETECT_FRAMES.get('Music', 'TRCK')
+            self.mode_detect_frames = saved_detect
             self.mode_detect_default = data.get('mode_detect_default', DEFAULT_DETECT_DEFAULT)
 
             # Always use current DEFAULT_MODES for built-in modes so frame-ID changes

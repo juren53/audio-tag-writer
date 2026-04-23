@@ -3,8 +3,8 @@ Audio Tag Writer - Constants, version info, and default mode definitions.
 """
 
 APP_NAME = "Audio Tag Writer"
-APP_VERSION = "0.7.2"
-APP_TIMESTAMP = "2026-04-23 13:41"
+APP_VERSION = "0.7.3"
+APP_TIMESTAMP = "2026-04-23 17:04"
 APP_ORGANIZATION = "SynchroSoft"
 APP_USER_MODEL_ID = "SynchroSoft.AudioTagWriter.ATW.0.7.2"
 GITHUB_REPO = "juren53/audio-tag-writer"
@@ -16,9 +16,13 @@ AUDIO_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.flac']
 # Modes with no frame_id are never matched by the rule loop.
 DEFAULT_DETECT_FRAMES = {
     "Scientific":         "TXXX:Equipment",
-    "Music":              "TPE1",
+    "Music":              "TRCK",      # Track Number — unique to music; TPE1 is unreliable
     "Archival Recording": "",          # no discriminating frame — use as default
 }
+# TPE1 (Artist) was the original Music discriminator but HSTL archival files
+# have TPE1 = "Harry S. Truman Library" set by the batch pipeline, causing
+# false Music matches.  TRCK (Track Number) is safe: archival and scientific
+# recordings never carry a track number.
 DEFAULT_DETECT_DEFAULT = "Archival Recording"
 
 DEFAULT_MODES = {

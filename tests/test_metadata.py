@@ -16,8 +16,10 @@ from audio_tag_writer.mutagen_utils import AudioFileError
 
 @pytest.fixture
 def mgr():
-    """Fresh MetadataManager in Archival Recording mode."""
-    return MetadataManager()
+    """Fresh MetadataManager explicitly in Archival Recording mode."""
+    m = MetadataManager()
+    m.reload_mode('Archival Recording')
+    return m
 
 
 # ------------------------------------------------------------------
@@ -145,11 +147,13 @@ def test_save_uses_id3v23(mp3_copy):
 
 def test_save_and_reload_description(mp3_copy):
     mgr = MetadataManager()
+    mgr.reload_mode('Archival Recording')
     mgr.load_from_file(mp3_copy)
     mgr.set_field('Description', 'A test description for COMM frame.')
     mgr.save_to_file(mp3_copy)
 
     mgr2 = MetadataManager()
+    mgr2.reload_mode('Archival Recording')
     mgr2.load_from_file(mp3_copy)
     assert mgr2.get_field('Description') == 'A test description for COMM frame.'
 
@@ -207,6 +211,7 @@ def test_json_roundtrip_preserves_all_fields(mgr, real_mp3, tmp_path):
     mgr.export_to_json(out)
 
     mgr2 = MetadataManager()
+    mgr2.reload_mode('Archival Recording')
     mgr2.load_from_file(real_mp3)
     mgr2.import_from_json(out)
 
