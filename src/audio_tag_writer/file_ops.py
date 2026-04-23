@@ -5,14 +5,18 @@ Audio Tag Writer - FileOpsMixin: save, export, import, view-all-tags.
 import os
 import logging
 
+import shutil
+
 from PyQt6.QtWidgets import (
-    QFileDialog, QMessageBox, QDialog, QVBoxLayout, QHBoxLayout,
-    QTableWidget, QTableWidgetItem, QHeaderView, QLineEdit, QLabel,
-    QPushButton, QAbstractItemView,
+    QApplication, QFileDialog, QMessageBox, QDialog, QDialogButtonBox,
+    QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView,
+    QLineEdit, QLabel, QPushButton, QAbstractItemView,
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 
 from .config import config
+from .constants import AUDIO_EXTENSIONS
+from .file_utils import backup_file
 from .mutagen_utils import open_audio, AudioFileError
 
 logger = logging.getLogger(__name__)
@@ -90,6 +94,152 @@ class FileOpsMixin:
             self.set_status(f"Imported  {os.path.basename(path)}")
         else:
             QMessageBox.critical(self, "Import Error", "Failed to import metadata.")
+
+    # ------------------------------------------------------------------
+    # Rename File
+    # ------------------------------------------------------------------
+
+    def on_rename_file(self):
+        """Rename the current audio file in-place with a backup."""
+        if not config.selected_file:
+            QMessageBox.warning(self, "No File", "Please open an audio file first.")
+            return
+
+        current_filename = os.path.basename(config.selected_file)
+        current_directory = os.path.dirname(config.selected_file)
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Rename File")
+        dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
+        dialog.setMinimumWidth(420)
+
+        layout = QVBoxLayout(dialog)
+        layout.addWidget(QLabel("Enter new filename:"))
+
+        line_edit = QLineEdit(current_filename)
+        line_edit.selectAll()
+        layout.addWidget(line_edit)
+
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
+        layout.addWidget(button_box)
+
+        # Temporarily suspend the app-level event filter so arrow keys work in the line edit
+        QApplication.instance().removeEventFilter(self)
+
+        dialog_shown = False
+        original_show_event = dialog.showEvent
+
+        def showEvent(event):
+            nonlocal dialog_shown
+            original_show_event(event)
+            if not dialog_shown:
+                dialog_shown = True
+                QTimer.singleShot(50, lambda: line_edit.setFocus())
+                QTimer.singleShot(100, lambda: line_edit.selectAll())
+
+        dialog.showEvent = showEvent
+
+        def keyPressEvent(event):
+            if event.key() in (Qt.Key.Key_Left, Qt.Key.Key_Right,
+                               Qt.Key.Key_Up, Qt.Key.Key_Down):
+                line_edit.setFocus()
+                line_edit.keyPressEvent(event)
+                event.accept()
+                return
+            if event.key() in (Qt.Key.Key_Enter, Qt.Key.Key_Return):
+                dialog.accept()
+                event.accept()
+                return
+            if event.key() == Qt.Key.Key_Escape:
+                dialog.reject()
+                event.accept()
+                return
+            QDialog.keyPressEvent(dialog, event)
+
+        dialog.keyPressEvent = keyPressEvent
+
+        def lineEditEventFilter(watched, event):
+            if (event.type() == event.Type.KeyPress and watched == line_edit
+                    and event.key() in (Qt.Key.Key_Left, Qt.Key.Key_Right,
+                                        Qt.Key.Key_Up, Qt.Key.Key_Down)):
+                line_edit.keyPressEvent(event)
+                return True
+            return False
+
+        line_edit.installEventFilter(dialog)
+        dialog.eventFilter = lineEditEventFilter
+
+        ok = dialog.exec() == QDialog.DialogCode.Accepted
+        new_filename = line_edit.text().strip() if ok else ""
+
+        QApplication.instance().installEventFilter(self)
+
+        if not ok or not new_filename or new_filename == current_filename:
+            return
+
+        # Strip any path components the user may have typed
+        new_filename = os.path.basename(new_filename)
+        if not new_filename or new_filename in ('.', '..') or '\x00' in new_filename:
+            QMessageBox.warning(self, "Invalid Filename",
+                                "The filename is invalid. Please enter a valid filename.")
+            return
+
+        # Warn if the extension changes to a non-audio type
+        new_ext = os.path.splitext(new_filename)[1].lower()
+        if new_ext not in AUDIO_EXTENSIONS:
+            reply = QMessageBox.question(
+                self, "Extension Changed",
+                f'The new extension "{new_ext}" is not a recognised audio format.\n'
+                'Rename anyway?',
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+
+        new_file_path = os.path.join(current_directory, new_filename)
+
+        if os.path.exists(new_file_path):
+            reply = QMessageBox.question(
+                self, "File Exists",
+                f'A file named "{new_filename}" already exists. Overwrite?',
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+
+        try:
+            backup_path = backup_file(config.selected_file)
+            if not backup_path:
+                raise Exception("Failed to create backup file")
+
+            shutil.move(config.selected_file, new_file_path)
+
+            config.selected_file = new_file_path
+            if config.directory_audio_files and config.current_file_index >= 0:
+                config.directory_audio_files[config.current_file_index] = new_file_path
+
+            self.load_file(new_file_path)
+            self.set_status(f"Renamed to  {new_filename}")
+            QMessageBox.information(
+                self, "File Renamed",
+                f"File successfully renamed to '{new_filename}'\n"
+                f"A backup was created at '{os.path.basename(backup_path)}'",
+            )
+
+        except Exception as e:
+            logger.error(f"Error renaming file: {e}")
+            QMessageBox.critical(self, "Rename Error", f"Failed to rename file:\n{e}")
+            if 'backup_path' in locals() and os.path.exists(backup_path):
+                try:
+                    shutil.copy2(backup_path, config.selected_file)
+                    self.set_status("Restored from backup after rename error")
+                except Exception as restore_err:
+                    logger.error(f"Error restoring from backup: {restore_err}")
+                    self.set_status("Error during rename — manual restore may be needed")
 
     # ------------------------------------------------------------------
     # View All Tags

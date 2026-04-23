@@ -68,6 +68,13 @@ class MenuMixin:
 
         edit_menu.addSeparator()
 
+        rename_act = QAction("&Rename File…", self)
+        rename_act.setShortcut("F2")
+        rename_act.triggered.connect(self.on_rename_file)
+        edit_menu.addAction(rename_act)
+
+        edit_menu.addSeparator()
+
         copy_path_act = QAction("Copy &Path to Clipboard", self)
         copy_path_act.setShortcut("Ctrl+Shift+C")
         copy_path_act.triggered.connect(self.on_copy_path)
