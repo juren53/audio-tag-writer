@@ -156,13 +156,15 @@ def build_from_source():
 
 def _write_ico(frames):
     os.makedirs(_ASSETS, exist_ok=True)
-    frames[0].save(
+    # PIL uses the first frame as the base source, so put the largest first
+    frames_desc = sorted(frames, key=lambda f: f.size[0], reverse=True)
+    frames_desc[0].save(
         _OUT,
         format='ICO',
-        sizes=[f.size for f in frames],
-        append_images=frames[1:],
+        sizes=[f.size for f in frames_desc],
+        append_images=frames_desc[1:],
     )
-    print(f'ICO written: {_OUT}  ({len(frames)} sizes)')
+    print(f'ICO written: {_OUT}  ({len(frames_desc)} sizes)')
 
 
 if __name__ == '__main__':
