@@ -12,7 +12,7 @@ from PyQt6.QtCore import Qt
 from .config import config
 from .file_utils import get_audio_files
 from .constants import APP_NAME, APP_VERSION, AUDIO_EXTENSIONS
-from .mutagen_utils import open_audio, AudioFileError
+from .mutagen_utils import open_audio, detect_mode, AudioFileError
 from .audio_utils import get_audio_info
 
 logger = logging.getLogger(__name__)
@@ -96,6 +96,22 @@ class NavigationMixin:
     # Load
     # ------------------------------------------------------------------
 
+    def _auto_detect_mode(self, tags) -> bool:
+        """Switch mode based on tag content if auto-detect is enabled. Returns True if switched."""
+        if not config.auto_detect_mode:
+            return False
+        detected = detect_mode(tags, config.mode_detect_frames, config.mode_detect_default)
+        if detected == config.get_active_mode() or detected not in config.modes:
+            return False
+        config.set_active_mode(detected)
+        self.metadata_manager.reload_mode(detected)
+        self.metadata_panel.rebuild_fields()
+        if hasattr(self, 'mode_combo'):
+            self.mode_combo.blockSignals(True)
+            self.mode_combo.setCurrentText(detected)
+            self.mode_combo.blockSignals(False)
+        return True
+
     def load_file(self, path: str):
         """Load an audio file: update config, scan directory, populate panels."""
         if not os.path.isfile(path):
@@ -124,6 +140,17 @@ class NavigationMixin:
             self.update_recent_directories_menu()
             self.update_recent_menu()
 
+            # Open audio once — reused for mode detection and the audio panel
+            try:
+                audio = open_audio(path)
+                tags = audio.tags
+            except AudioFileError:
+                audio = None
+                tags = None
+
+            # Auto-detect mode before reading metadata so the right field set is loaded
+            self._auto_detect_mode(tags)
+
             # Audio stream info
             info = get_audio_info(path)
 
@@ -132,11 +159,6 @@ class NavigationMixin:
             self.metadata_panel.update_from_manager()
 
             # Audio panel (art + info)
-            try:
-                audio = open_audio(path)
-                tags = audio.tags
-            except AudioFileError:
-                tags = None
             self.audio_panel.display_audio(path, info, tags)
 
             # Window title

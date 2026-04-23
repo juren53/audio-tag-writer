@@ -97,6 +97,17 @@ class MenuMixin:
 
         view_menu.addSeparator()
 
+        self.auto_detect_action = QAction("&Auto-detect Mode on Load", self)
+        self.auto_detect_action.setCheckable(True)
+        self.auto_detect_action.setChecked(config.auto_detect_mode)
+        self.auto_detect_action.setToolTip(
+            "Automatically switch the metadata mode when opening a file"
+        )
+        self.auto_detect_action.triggered.connect(self.on_toggle_auto_detect)
+        view_menu.addAction(self.auto_detect_action)
+
+        view_menu.addSeparator()
+
         self.dark_mode_action = QAction("Toggle &Dark Mode", self)
         self.dark_mode_action.setShortcut("Ctrl+D")
         self.dark_mode_action.setCheckable(True)

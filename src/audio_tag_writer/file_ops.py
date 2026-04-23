@@ -307,6 +307,13 @@ class FileOpsMixin:
                 return True
         return False
 
+    def on_toggle_auto_detect(self, checked: bool):
+        """Toggle auto-detect mode on load."""
+        config.auto_detect_mode = checked
+        config.save_config()
+        state = "enabled" if checked else "disabled"
+        self.set_status(f"Auto-detect mode {state}")
+
     def on_manage_modes(self):
         """Open the Manage Modes dialog and apply any changes."""
         from .widgets.manage_modes_dialog import ManageModesDialog
@@ -315,9 +322,11 @@ class FileOpsMixin:
         if dlg.exec() != QDialog.DialogCode.Accepted:
             return
 
-        new_modes, new_active = dlg.get_result()
+        new_modes, new_active, new_detect_frames, new_detect_default = dlg.get_result()
         config.modes = new_modes
         config.active_mode = new_active
+        config.mode_detect_frames = new_detect_frames
+        config.mode_detect_default = new_detect_default
         config.save_config()
 
         if hasattr(self, 'mode_combo'):

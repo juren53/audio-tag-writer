@@ -8,13 +8,13 @@ import logging
 from PyQt6.QtWidgets import (
     QDialog, QHBoxLayout, QVBoxLayout, QWidget, QListWidget,
     QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView,
-    QPushButton, QLabel, QInputDialog, QMessageBox, QDialogButtonBox,
-    QComboBox, QStyledItemDelegate,
+    QPushButton, QLabel, QLineEdit, QInputDialog, QMessageBox,
+    QDialogButtonBox, QComboBox, QStyledItemDelegate,
 )
 from PyQt6.QtCore import Qt
 
 from ..config import config
-from ..constants import DEFAULT_MODES
+from ..constants import DEFAULT_MODES, DEFAULT_DETECT_FRAMES, DEFAULT_DETECT_DEFAULT
 
 logger = logging.getLogger(__name__)
 
@@ -50,10 +50,13 @@ class ManageModesDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Manage Modes")
-        self.resize(860, 520)
+        self.resize(920, 540)
         self._modes = copy.deepcopy(config.modes)
         self._active_mode = config.get_active_mode()
         self._current_mode = None
+        # Detection rule state (editable copies)
+        self._detect_frames = copy.deepcopy(config.mode_detect_frames)
+        self._detect_default = config.mode_detect_default
         self._setup_ui()
         self._populate_mode_list()
 
@@ -69,7 +72,7 @@ class ManageModesDialog(QDialog):
 
         # ── Left: mode list ───────────────────────────────────────────
         left_widget = QWidget()
-        left_widget.setFixedWidth(210)
+        left_widget.setFixedWidth(240)
         left = QVBoxLayout(left_widget)
         left.setContentsMargins(0, 0, 8, 0)
         left.addWidget(QLabel("Modes"))
@@ -77,6 +80,26 @@ class ManageModesDialog(QDialog):
         self._mode_list = QListWidget()
         self._mode_list.currentTextChanged.connect(self._on_mode_selected)
         left.addWidget(self._mode_list, 1)
+
+        # Detection rule for the selected mode
+        left.addWidget(QLabel("Detect by frame ID:"))
+        self._detect_frame_edit = QLineEdit()
+        self._detect_frame_edit.setPlaceholderText("e.g. TPE1  or  TXXX:Equipment")
+        self._detect_frame_edit.setToolTip(
+            "ID3 frame that identifies this mode.\n"
+            "Leave empty if this mode is the default fallback."
+        )
+        self._detect_frame_edit.editingFinished.connect(self._on_detect_frame_changed)
+        left.addWidget(self._detect_frame_edit)
+
+        # Default (fallback) mode selector
+        left.addWidget(QLabel("Default mode (no match):"))
+        self._default_mode_combo = QComboBox()
+        self._default_mode_combo.setToolTip(
+            "Mode used when no detect frame matches on load."
+        )
+        self._default_mode_combo.currentTextChanged.connect(self._on_default_mode_changed)
+        left.addWidget(self._default_mode_combo)
 
         mode_btns = QHBoxLayout()
         self._btn_add_mode = QPushButton("Add")
@@ -152,6 +175,15 @@ class ManageModesDialog(QDialog):
             self._mode_list.addItem(name)
         self._mode_list.blockSignals(False)
 
+        # Refresh the default-mode combo to match current mode list
+        self._default_mode_combo.blockSignals(True)
+        self._default_mode_combo.clear()
+        self._default_mode_combo.addItems(list(self._modes.keys()))
+        default = self._detect_default if self._detect_default in self._modes else next(iter(self._modes), '')
+        self._detect_default = default
+        self._default_mode_combo.setCurrentText(default)
+        self._default_mode_combo.blockSignals(False)
+
         target = self._active_mode
         items = self._mode_list.findItems(target, Qt.MatchFlag.MatchExactly)
         if items:
@@ -164,7 +196,20 @@ class ManageModesDialog(QDialog):
         self._current_mode = mode_name
         self._fields_label.setText(f"Fields for: {mode_name}")
         self._load_fields(mode_name)
+        # Show this mode's detect frame (empty string if not set)
+        self._detect_frame_edit.blockSignals(True)
+        self._detect_frame_edit.setText(self._detect_frames.get(mode_name, ''))
+        self._detect_frame_edit.blockSignals(False)
         self._update_mode_buttons()
+
+    def _on_detect_frame_changed(self):
+        if self._current_mode is None:
+            return
+        self._detect_frames[self._current_mode] = self._detect_frame_edit.text().strip()
+
+    def _on_default_mode_changed(self, mode_name: str):
+        if mode_name:
+            self._detect_default = mode_name
 
     def _update_mode_buttons(self):
         mode = self._current_mode
@@ -237,6 +282,7 @@ class ManageModesDialog(QDialog):
                                 f'A mode named "{name}" already exists.')
             return
         self._modes[name] = []
+        self._detect_frames[name] = ''
         self._populate_mode_list()
         items = self._mode_list.findItems(name, Qt.MatchFlag.MatchExactly)
         if items:
@@ -255,10 +301,12 @@ class ManageModesDialog(QDialog):
                                 f'A mode named "{new}" already exists.')
             return
         self._save_current_fields()
-        rebuilt = {(new if k == old else k): v for k, v in self._modes.items()}
-        self._modes = rebuilt
+        self._modes = {(new if k == old else k): v for k, v in self._modes.items()}
+        self._detect_frames = {(new if k == old else k): v for k, v in self._detect_frames.items()}
         if self._active_mode == old:
             self._active_mode = new
+        if self._detect_default == old:
+            self._detect_default = new
         self._current_mode = new
         self._populate_mode_list()
 
@@ -274,8 +322,11 @@ class ManageModesDialog(QDialog):
             return
         deleted = self._current_mode
         del self._modes[deleted]
+        self._detect_frames.pop(deleted, None)
         if self._active_mode == deleted:
             self._active_mode = next(iter(self._modes))
+        if self._detect_default == deleted:
+            self._detect_default = next(iter(self._modes))
         self._current_mode = None
         self._populate_mode_list()
 
@@ -291,7 +342,9 @@ class ManageModesDialog(QDialog):
         if reply != QMessageBox.StandardButton.Yes:
             return
         self._modes[self._current_mode] = copy.deepcopy(DEFAULT_MODES[self._current_mode])
+        self._detect_frames[self._current_mode] = DEFAULT_DETECT_FRAMES.get(self._current_mode, '')
         self._load_fields(self._current_mode)
+        self._detect_frame_edit.setText(self._detect_frames.get(self._current_mode, ''))
 
     # ------------------------------------------------------------------
     # Field button handlers
@@ -341,6 +394,9 @@ class ManageModesDialog(QDialog):
     # ------------------------------------------------------------------
 
     def _on_ok(self):
+        # Flush the detect-frame input for the currently selected mode
+        if self._current_mode is not None:
+            self._detect_frames[self._current_mode] = self._detect_frame_edit.text().strip()
         self._save_current_fields()
         for name, fields in self._modes.items():
             if not fields:
@@ -356,5 +412,5 @@ class ManageModesDialog(QDialog):
         self.accept()
 
     def get_result(self):
-        """Return (modes_dict, active_mode_name) after the dialog is accepted."""
-        return self._modes, self._active_mode
+        """Return (modes, active_mode, detect_frames, detect_default) after the dialog is accepted."""
+        return self._modes, self._active_mode, self._detect_frames, self._detect_default

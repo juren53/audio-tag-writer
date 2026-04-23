@@ -3,13 +3,23 @@ Audio Tag Writer - Constants, version info, and default mode definitions.
 """
 
 APP_NAME = "Audio Tag Writer"
-APP_VERSION = "0.7.1"
-APP_TIMESTAMP = "2026-04-23 11:52"
+APP_VERSION = "0.7.2"
+APP_TIMESTAMP = "2026-04-23 13:41"
 APP_ORGANIZATION = "SynchroSoft"
-APP_USER_MODEL_ID = "SynchroSoft.AudioTagWriter.ATW.0.7.1"
+APP_USER_MODEL_ID = "SynchroSoft.AudioTagWriter.ATW.0.7.2"
 GITHUB_REPO = "juren53/audio-tag-writer"
 
 AUDIO_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.flac']
+
+# Detection rules: ordered dict of {mode_name: frame_id}.
+# First mode whose frame_id is non-empty and present in the file wins.
+# Modes with no frame_id are never matched by the rule loop.
+DEFAULT_DETECT_FRAMES = {
+    "Scientific":         "TXXX:Equipment",
+    "Music":              "TPE1",
+    "Archival Recording": "",          # no discriminating frame — use as default
+}
+DEFAULT_DETECT_DEFAULT = "Archival Recording"
 
 DEFAULT_MODES = {
     "Archival Recording": [

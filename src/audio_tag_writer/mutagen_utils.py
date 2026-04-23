@@ -39,6 +39,22 @@ def open_audio(path: str):
         raise AudioFileError(f"Could not open audio file '{path}': {e}") from e
 
 
+def detect_mode(tags, detect_frames: dict, default: str) -> str:
+    """
+    Infer mode from tags using user-configured detection rules.
+
+    detect_frames: ordered dict of {mode_name: frame_id}.
+      Iterates in insertion order; first mode whose frame_id is non-empty
+      and present in the file wins.
+    default: mode name returned when no rule matches (or tags is None).
+    """
+    if tags is not None:
+        for mode_name, frame_id in detect_frames.items():
+            if frame_id and safe_get_text(tags, frame_id):
+                return mode_name
+    return default
+
+
 def safe_get_text(tags, frame_id: str, default: str = '') -> str:
     """
     Return the first text value from an ID3 frame, or default if the frame is absent.

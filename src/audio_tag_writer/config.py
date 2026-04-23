@@ -8,7 +8,8 @@ import json
 import logging
 import tempfile
 
-from .constants import APP_VERSION, APP_TIMESTAMP, DEFAULT_MODES
+from .constants import (APP_VERSION, APP_TIMESTAMP,
+                        DEFAULT_MODES, DEFAULT_DETECT_FRAMES, DEFAULT_DETECT_DEFAULT)
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +109,11 @@ class Config:
         self.active_mode = "Archival Recording"
         self.modes = {name: list(fields) for name, fields in DEFAULT_MODES.items()}
 
+        # Auto-detect mode settings
+        self.auto_detect_mode = True
+        self.mode_detect_frames = dict(DEFAULT_DETECT_FRAMES)
+        self.mode_detect_default = DEFAULT_DETECT_DEFAULT
+
         self.config_file = os.path.join(os.path.expanduser("~"), ".audio_tag_writer_config.json")
         self.load_config()
 
@@ -174,6 +180,9 @@ class Config:
                 'update_check_frequency': self.update_check_frequency,
                 'active_mode': self.active_mode,
                 'modes': self.modes,
+                'auto_detect_mode': self.auto_detect_mode,
+                'mode_detect_frames': self.mode_detect_frames,
+                'mode_detect_default': self.mode_detect_default,
             }
             with open(self.config_file, 'w') as f:
                 json.dump(data, f, indent=2)
@@ -205,6 +214,9 @@ class Config:
             self.skipped_versions = data.get('skipped_versions', [])
             self.update_check_frequency = data.get('update_check_frequency', 86400)
             self.active_mode = data.get('active_mode', 'Archival Recording')
+            self.auto_detect_mode = data.get('auto_detect_mode', True)
+            self.mode_detect_frames = data.get('mode_detect_frames', dict(DEFAULT_DETECT_FRAMES))
+            self.mode_detect_default = data.get('mode_detect_default', DEFAULT_DETECT_DEFAULT)
 
             # Always use current DEFAULT_MODES for built-in modes so frame-ID changes
             # (schema migrations) take effect immediately.  User-added custom modes
