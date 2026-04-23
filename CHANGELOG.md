@@ -5,7 +5,19 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.2] - Thu 23 Apr 2026 CDT
+## [0.6.3] - Thu 23 Apr 2026 09:55 CDT
+
+### Fixed
+- **Fuzzy/blurry ATW icon** — `ICON_atw.ico` previously contained only a single 16×16 frame;
+  Windows scaled it up for all larger display contexts (taskbar, Alt+Tab, title bar), producing
+  a blurry result.  Root cause: `_write_ico` in `tools/gen_icon.py` passed the smallest frame
+  as PIL's base image, causing PIL to discard the larger `append_images`.  Fixed by sorting
+  frames largest-first before saving.  Regenerated `ICON_atw.ico` from `ICON_atw_source.png`
+  with all 7 sizes embedded: 16, 24, 32, 48, 64, 128, 256 px.
+
+---
+
+## [0.6.2] - Thu 23 Apr 2026 09:30 CDT
 
 ### Fixed
 - **Arrow-key navigation in main window (Phase 4)** — Up/Down arrows now navigate to the
