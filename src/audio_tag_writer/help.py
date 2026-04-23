@@ -3,6 +3,7 @@ Audio Tag Writer - HelpMixin: About and Changelog dialogs.
 """
 
 import os
+import sys
 import logging
 
 from PyQt6.QtWidgets import (
@@ -57,36 +58,64 @@ class HelpMixin:
                 f"<small>{APP_TIMESTAMP}</small>",
             )
 
+    _CHANGELOG_URL = "https://github.com/juren53/audio-tag-writer/blob/master/CHANGELOG.md"
+
     def on_changelog(self):
-        """Show CHANGELOG.md in a resizable dialog."""
-        changelog_path = os.path.join(_project_root(), "CHANGELOG.md")
-        if not os.path.isfile(changelog_path):
-            QMessageBox.information(self, "Changelog", "CHANGELOG.md not found.")
-            return
+        """Show CHANGELOG.md locally, falling back to the GitHub URL."""
+        changelog_path = self._find_changelog()
 
+        if changelog_path:
+            try:
+                dialog = QDialog(self)
+                dialog.setWindowTitle("Changelog")
+                dialog.resize(740, 560)
+                dialog.setWindowFlags(
+                    Qt.WindowType.Window |
+                    Qt.WindowType.WindowMinimizeButtonHint |
+                    Qt.WindowType.WindowMaximizeButtonHint |
+                    Qt.WindowType.WindowCloseButtonHint
+                )
+                layout = QVBoxLayout(dialog)
+
+                text = QTextEdit()
+                text.setReadOnly(True)
+                with open(changelog_path, encoding='utf-8') as f:
+                    text.setPlainText(f.read())
+                layout.addWidget(text)
+
+                btn = QPushButton("Close")
+                btn.clicked.connect(dialog.accept)
+                layout.addWidget(btn, alignment=Qt.AlignmentFlag.AlignRight)
+
+                dialog.exec()
+                return
+            except Exception as e:
+                logger.error(f"Error showing local changelog: {e}")
+
+        # Local file unavailable (frozen EXE without bundled file, or source tree missing) —
+        # open GitHub page in the default browser.
+        import webbrowser
         try:
-            dialog = QDialog(self)
-            dialog.setWindowTitle("Changelog")
-            dialog.resize(740, 560)
-            dialog.setWindowFlags(
-                Qt.WindowType.Window |
-                Qt.WindowType.WindowMinimizeButtonHint |
-                Qt.WindowType.WindowMaximizeButtonHint |
-                Qt.WindowType.WindowCloseButtonHint
-            )
-            layout = QVBoxLayout(dialog)
-
-            text = QTextEdit()
-            text.setReadOnly(True)
-            with open(changelog_path, encoding='utf-8') as f:
-                text.setPlainText(f.read())
-            layout.addWidget(text)
-
-            btn = QPushButton("Close")
-            btn.clicked.connect(dialog.accept)
-            layout.addWidget(btn, alignment=Qt.AlignmentFlag.AlignRight)
-
-            dialog.exec()
+            webbrowser.open(self._CHANGELOG_URL)
         except Exception as e:
-            logger.error(f"Error showing changelog: {e}")
-            QMessageBox.warning(self, "Changelog", f"Could not open changelog:\n{e}")
+            logger.error(f"Error opening changelog URL: {e}")
+            QMessageBox.warning(
+                self, "Changelog",
+                f"Could not open changelog.\n\nURL: {self._CHANGELOG_URL}"
+            )
+
+    @staticmethod
+    def _find_changelog():
+        """Return the path to CHANGELOG.md or None if not found."""
+        # 1. Frozen EXE: PyInstaller extracts bundled data to sys._MEIPASS
+        if getattr(sys, 'frozen', False):
+            candidate = os.path.join(sys._MEIPASS, 'CHANGELOG.md')
+            if os.path.isfile(candidate):
+                return candidate
+
+        # 2. Source tree: two levels up from this file (src/audio_tag_writer/ → project root)
+        candidate = os.path.join(_project_root(), 'CHANGELOG.md')
+        if os.path.isfile(candidate):
+            return candidate
+
+        return None

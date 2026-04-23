@@ -12,6 +12,7 @@ a = Analysis(
     binaries=[],
     datas=[
         ('assets', 'assets'),
+        ('CHANGELOG.md', '.'),
     ],
     hiddenimports=[
         'mutagen',
