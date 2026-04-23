@@ -140,7 +140,7 @@ class MenuMixin:
         self.addToolBar(tb)
 
         prev_act = QAction("◀  Prev", self)
-        prev_act.setToolTip("Previous file in directory  (←)")
+        prev_act.setToolTip("Previous file in directory  (↑)")
         prev_act.triggered.connect(self.on_previous)
         tb.addAction(prev_act)
 
@@ -150,7 +150,7 @@ class MenuMixin:
         tb.addAction(open_act)
 
         next_act = QAction("Next  ▶", self)
-        next_act.setToolTip("Next file in directory  (→)")
+        next_act.setToolTip("Next file in directory  (↓)")
         next_act.triggered.connect(self.on_next)
         tb.addAction(next_act)
 

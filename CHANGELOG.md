@@ -5,6 +5,22 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - Thu 23 Apr 2026 CDT
+
+### Fixed
+- **Arrow-key navigation in main window (Phase 4)** — Up/Down arrows now navigate to the
+  previous/next audio file in the current directory regardless of which child widget holds
+  keyboard focus.  The previous `keyPressEvent` approach on `QMainWindow` was silently
+  swallowed by toolbar buttons and metadata fields before reaching the window; replaced with
+  an application-level event filter (`QApplication.installEventFilter`) registered in
+  `MainWindow.__init__` and implemented in `WindowMixin.eventFilter`, matching the pattern
+  used by Tag Writer.
+- **`WindowMixin.keyPressEvent`** — Updated navigation keys from Left/Right to Up/Down,
+  consistent with the documented shortcuts and the event filter.
+- **Toolbar tooltips** — Corrected Prev/Next hints from `(←)`/`(→)` to `(↑)`/`(↓)`.
+
+---
+
 ## [0.6.1] - Wed 22 Apr 2026 11:26 PM CDT
 
 ### Added

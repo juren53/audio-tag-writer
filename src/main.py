@@ -66,6 +66,7 @@ class MainWindow(NavigationMixin, FileOpsMixin, MenuMixin, ThemeMixin, HelpMixin
         self._zoom_css = ''
 
         self._setup_ui()
+        QApplication.instance().installEventFilter(self)
         self.restore_window_geometry()
 
         # Apply saved theme (and zoom if non-default)

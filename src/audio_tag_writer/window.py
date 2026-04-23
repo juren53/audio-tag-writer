@@ -16,13 +16,24 @@ logger = logging.getLogger(__name__)
 class WindowMixin:
     """Mixin providing keyboard navigation, geometry persistence, and clean shutdown."""
 
+    def eventFilter(self, obj, event):
+        """Application-level event filter to intercept Up/Down arrow keys."""
+        if event.type() == event.Type.KeyPress:
+            if event.key() == Qt.Key.Key_Up:
+                self.on_previous()
+                return True
+            elif event.key() == Qt.Key.Key_Down:
+                self.on_next()
+                return True
+        return super().eventFilter(obj, event)
+
     def keyPressEvent(self, event):
-        """Left/Right arrows navigate; F5 refreshes; everything else bubbles up."""
+        """Up/Down arrows navigate; F5 refreshes; everything else bubbles up."""
         key = event.key()
-        if key == Qt.Key.Key_Left:
+        if key == Qt.Key.Key_Up:
             self.on_previous()
             event.accept()
-        elif key == Qt.Key.Key_Right:
+        elif key == Qt.Key.Key_Down:
             self.on_next()
             event.accept()
         elif key == Qt.Key.Key_F5:
@@ -78,4 +89,5 @@ class WindowMixin:
         except Exception as e:
             logger.error(f"Error during close: {e}")
         event.accept()
+        QApplication.instance().removeEventFilter(self)
         QApplication.instance().quit()
