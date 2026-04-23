@@ -3,7 +3,7 @@ Audio Tag Writer - MenuMixin: create_menu_bar() and create_toolbar().
 """
 
 from PyQt6.QtWidgets import QToolBar, QLabel
-from PyQt6.QtGui import QAction
+from PyQt6.QtGui import QAction, QKeySequence
 
 
 class MenuMixin:
@@ -86,6 +86,36 @@ class MenuMixin:
         tags_act.triggered.connect(self.on_view_all_tags)
         view_menu.addAction(tags_act)
 
+        view_menu.addSeparator()
+
+        self.dark_mode_action = QAction("Toggle &Dark Mode", self)
+        self.dark_mode_action.setShortcut("Ctrl+D")
+        self.dark_mode_action.setCheckable(True)
+        self.dark_mode_action.setChecked(getattr(self, 'dark_mode', False))
+        self.dark_mode_action.triggered.connect(self.on_toggle_dark_mode)
+        view_menu.addAction(self.dark_mode_action)
+
+        theme_act = QAction("Select &Theme…", self)
+        theme_act.triggered.connect(self.on_select_theme)
+        view_menu.addAction(theme_act)
+
+        view_menu.addSeparator()
+
+        zoom_in_act = QAction("Zoom &In", self)
+        zoom_in_act.setShortcut(QKeySequence("Ctrl++"))
+        zoom_in_act.triggered.connect(lambda: self.zoom_ui(0.1))
+        view_menu.addAction(zoom_in_act)
+
+        zoom_out_act = QAction("Zoom &Out", self)
+        zoom_out_act.setShortcut(QKeySequence("Ctrl+-"))
+        zoom_out_act.triggered.connect(lambda: self.zoom_ui(-0.1))
+        view_menu.addAction(zoom_out_act)
+
+        zoom_reset_act = QAction("&Reset Zoom", self)
+        zoom_reset_act.setShortcut(QKeySequence("Ctrl+0"))
+        zoom_reset_act.triggered.connect(self.reset_zoom)
+        view_menu.addAction(zoom_reset_act)
+
         # ── Help ──────────────────────────────────────────────────────
         help_menu = mb.addMenu("&Help")
 
@@ -143,6 +173,22 @@ class MenuMixin:
         tags_act.setToolTip("View all raw ID3 tags  (Ctrl+T)")
         tags_act.triggered.connect(self.on_view_all_tags)
         tb.addAction(tags_act)
+
+        tb.addSeparator()
+
+        zoom_out_btn = QAction("−", self)
+        zoom_out_btn.setToolTip("Zoom out  (Ctrl+−)")
+        zoom_out_btn.triggered.connect(lambda: self.zoom_ui(-0.1))
+        tb.addAction(zoom_out_btn)
+
+        self.zoom_label = QLabel("  100%")
+        self.zoom_label.setMinimumWidth(44)
+        tb.addWidget(self.zoom_label)
+
+        zoom_in_btn = QAction("+", self)
+        zoom_in_btn.setToolTip("Zoom in  (Ctrl++)")
+        zoom_in_btn.triggered.connect(lambda: self.zoom_ui(0.1))
+        tb.addAction(zoom_in_btn)
 
         tb.addSeparator()
 

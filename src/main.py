@@ -31,6 +31,9 @@ from audio_tag_writer.file_ops import FileOpsMixin
 from audio_tag_writer.navigation import NavigationMixin
 from audio_tag_writer.window import WindowMixin
 from audio_tag_writer.menu import MenuMixin
+from audio_tag_writer.theme import ThemeManager
+from audio_tag_writer.theme_mixin import ThemeMixin
+from audio_tag_writer.help import HelpMixin
 
 
 def _get_icon_path():
@@ -43,21 +46,36 @@ def _get_icon_path():
     return None
 
 
-class MainWindow(NavigationMixin, FileOpsMixin, MenuMixin, WindowMixin, QMainWindow):
+class MainWindow(NavigationMixin, FileOpsMixin, MenuMixin, ThemeMixin, HelpMixin, WindowMixin, QMainWindow):
     """
-    Main application window — Phase 4.
+    Main application window — Phase 5.
     Splitter layout: MetadataPanel (left) | AudioPanel (right).
-    Mixin chain: NavigationMixin → FileOpsMixin → MenuMixin → WindowMixin → QMainWindow
+    Mixin chain: NavigationMixin → FileOpsMixin → MenuMixin → ThemeMixin → HelpMixin → WindowMixin → QMainWindow
     """
 
     def __init__(self):
         super().__init__()
         self._is_closing = False
         self.metadata_manager = MetadataManager()
+
+        # Theme / zoom state — must be set before _setup_ui calls create_menu_bar
+        self.theme_manager = ThemeManager()
+        self.current_theme = config.current_theme
+        self.dark_mode = config.dark_mode
+        self.ui_scale_factor = config.ui_zoom_factor
+        self._zoom_css = ''
+
         self._setup_ui()
         self.restore_window_geometry()
+
+        # Apply saved theme (and zoom if non-default)
+        if self.ui_scale_factor != 1.0:
+            self._apply_ui_zoom()
+        else:
+            self.apply_comprehensive_theme()
+
         self._restore_last_file()
-        logger.info("Main window initialised (Phase 4)")
+        logger.info("Main window initialised (Phase 5)")
 
     # ------------------------------------------------------------------
     # UI setup
@@ -123,44 +141,6 @@ class MainWindow(NavigationMixin, FileOpsMixin, MenuMixin, WindowMixin, QMainWin
         if config.selected_file and os.path.isfile(config.selected_file):
             self.load_file(config.selected_file)
 
-    # ------------------------------------------------------------------
-    # Help stubs (Phase 5 will wire these to help.py)
-    # ------------------------------------------------------------------
-
-    def on_about(self):
-        from audio_tag_writer.constants import APP_VERSION, APP_TIMESTAMP
-        QMessageBox.about(
-            self, f"About {APP_NAME}",
-            f"<b>{APP_NAME}</b>  v{APP_VERSION}<br>"
-            f"<br>"
-            f"ID3 metadata editor for audio files.<br>"
-            f"Built with PyQt6 + Mutagen.<br>"
-            f"<br>"
-            f"<small>{APP_TIMESTAMP}</small>"
-        )
-
-    def on_changelog(self):
-        changelog_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "CHANGELOG.md"
-        )
-        if os.path.isfile(changelog_path):
-            from PyQt6.QtWidgets import QDialog, QTextEdit, QPushButton, QVBoxLayout
-            dlg = QDialog(self)
-            dlg.setWindowTitle("Changelog")
-            dlg.resize(700, 500)
-            layout = QVBoxLayout(dlg)
-            text = QTextEdit()
-            text.setReadOnly(True)
-            with open(changelog_path, encoding='utf-8') as f:
-                text.setPlainText(f.read())
-            layout.addWidget(text)
-            btn = QPushButton("Close")
-            btn.clicked.connect(dlg.accept)
-            layout.addWidget(btn, alignment=Qt.AlignmentFlag.AlignRight)
-            dlg.exec()
-        else:
-            QMessageBox.information(self, "Changelog", "CHANGELOG.md not found.")
 
 
 # ------------------------------------------------------------------

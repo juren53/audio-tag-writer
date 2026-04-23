@@ -5,6 +5,55 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - Tue 21 Apr 2026 09:25:00 PM CDT
+
+### Added
+- **Phase 5 — Themes + Polish**
+
+- **`theme.py`** — `ThemeManager` with 8 built-in themes: Default Light, Warm Light, Dark,
+  Solarized Light, Solarized Dark, High Contrast, Monokai, GitHub Dark; each theme is a
+  palette dict driving a comprehensive QSS stylesheet (`generate_stylesheet()`); `is_dark_theme()`
+  helper used by toggle logic
+
+- **`theme_mixin.py`** — `ThemeMixin` providing:
+  - `apply_comprehensive_theme()` — applies `generate_stylesheet()` to `QApplication` instance;
+    preserves any active zoom CSS appended after the theme block
+  - `on_toggle_dark_mode()` — flips between Default Light ↔ Dark; updates `dark_mode_action`
+    checked state, persists to config (Ctrl+D)
+  - `on_select_theme()` — inline `QDialog` / `QListWidget` picker for all 8 themes
+  - `zoom_ui(delta)` — increments/decrements `ui_scale_factor` by 0.1, clamped to 0.5–1.5;
+    injects font + padding CSS appended to the theme stylesheet; updates toolbar zoom label
+  - `reset_zoom()` — resets to 1.0 (Ctrl+0)
+  - All status updates via `self.set_status()` (no `status_label` coupling)
+
+- **`help.py`** — `HelpMixin` providing:
+  - `on_about()` — uses `pyqt_app_info.AboutDialog` (with Mutagen version in description);
+    falls back to `QMessageBox.about` if library unavailable
+  - `on_changelog()` — opens `CHANGELOG.md` in a resizable, maximisable `QDialog` /
+    `QTextEdit`; shows warning if file not found
+
+- **`menu.py`** — View menu extended:
+  - Toggle Dark Mode (Ctrl+D) — checkable `QAction` stored as `self.dark_mode_action`
+  - Select Theme… — opens `ThemeMixin.on_select_theme()`
+  - Zoom In (Ctrl++), Zoom Out (Ctrl+−), Reset Zoom (Ctrl+0)
+  - Toolbar extended with − / zoom-label / + buttons for mouse-driven zoom
+
+- **`main.py`** — `MainWindow` now inherits
+  `NavigationMixin, FileOpsMixin, MenuMixin, ThemeMixin, HelpMixin, WindowMixin, QMainWindow`;
+  `__init__` initialises `theme_manager`, `current_theme`, `dark_mode`, `ui_scale_factor`,
+  `_zoom_css` from config before `_setup_ui()` (so `create_menu_bar` can set
+  `dark_mode_action.checked` correctly); calls `apply_comprehensive_theme()` or
+  `_apply_ui_zoom()` on startup to restore saved appearance; `on_about` / `on_changelog`
+  stubs removed in favour of `HelpMixin`
+
+### Technical
+- Theme state persisted in config: `current_theme`, `dark_mode`, `ui_zoom_factor`
+- `dark_mode_action` created in `create_menu_bar()` using `getattr(self, 'dark_mode', False)`
+  so checked state is correct even when the action is built before the window is fully shown
+- Zoom CSS is appended to (not merged with) the theme stylesheet to keep both independent;
+  `_zoom_css` cached on `self` so `apply_comprehensive_theme()` can re-append it
+---
+
 ## [0.4.1] - Wed 22 Apr 2026
 
 ### Added
@@ -246,6 +295,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v0.5.0** - Tue 21 Apr 2026: Phase 5 — ThemeManager (8 themes), ThemeMixin (zoom, dark toggle,
+  theme picker), HelpMixin (About + Changelog); View menu + toolbar zoom controls
 - **v0.4.1** - Wed 22 Apr 2026: Bash launcher `run.sh` for Linux/macOS (mirrors `run.ps1`)
 - **v0.4.0** - Tue 21 Apr 2026: Phase 4 — NavigationMixin, WindowMixin, MenuMixin; ←→ navigation,
   directory scanning, Recent Files/Dirs menus, geometry save/restore
