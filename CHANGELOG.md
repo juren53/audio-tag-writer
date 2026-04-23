@@ -5,7 +5,7 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.0] - Tue 21 Apr 2026 09:25:00 PM CDT
+## [0.5.0] - Wed 22 Apr 2026 07:35:00 PM CDT
 
 ### Added
 - **Phase 5 — Themes + Polish**
@@ -295,7 +295,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
-- **v0.5.0** - Tue 21 Apr 2026: Phase 5 — ThemeManager (8 themes), ThemeMixin (zoom, dark toggle,
+- **v0.5.0** - Wed 22 Apr 2026: Phase 5 — ThemeManager (8 themes), ThemeMixin (zoom, dark toggle,
   theme picker), HelpMixin (About + Changelog); View menu + toolbar zoom controls
 - **v0.4.1** - Wed 22 Apr 2026: Bash launcher `run.sh` for Linux/macOS (mirrors `run.ps1`)
 - **v0.4.0** - Tue 21 Apr 2026: Phase 4 — NavigationMixin, WindowMixin, MenuMixin; ←→ navigation,
