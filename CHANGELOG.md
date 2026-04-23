@@ -5,6 +5,97 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - Thu 23 Apr 2026 13:41 CDT
+
+### Added
+- **Auto-detect mode on file load** — when a file is opened ATW inspects its existing
+  ID3 tags and automatically switches to the best-matching mode before reading metadata,
+  so the right field set is active from the first keystroke
+- **Configurable detection rules** — `mode_detect_frames` (ordered dict of
+  `{mode_name: frame_id}`) and `mode_detect_default` (fallback mode name) stored in
+  `~/.audio_tag_writer_config.json`; defaults: Scientific = `TXXX:Equipment`,
+  Music = `TPE1`, Archival Recording = fallback
+- **`detect_mode(tags, detect_frames, default)`** in `mutagen_utils.py` — iterates the
+  detect-frames dict in insertion order; first mode whose frame ID is non-empty and
+  present in the file wins; returns `default` if no rule matches or tags is `None`
+- **`NavigationMixin._auto_detect_mode(tags)`** — respects the `auto_detect_mode` toggle;
+  switches mode and rebuilds the panel if detection result differs from current mode
+- **View > Auto-detect Mode on Load** — checkable menu item; persisted to config
+- **Manage Modes dialog — detection controls** per mode:
+  - *Detect by frame ID* text input — the discriminating frame for this mode (leave empty
+    for no-match modes)
+  - *Default mode (no match)* combo — which mode to fall back to when no rule fires
+  - Both controls kept in sync through Add / Rename / Delete / Reset operations
+- **`DEFAULT_DETECT_FRAMES` + `DEFAULT_DETECT_DEFAULT`** in `constants.py` — factory
+  defaults for detection rules; Reset in Manage Modes restores them
+
+### Changed
+- `load_file()` now opens the audio file once early (before `get_audio_info`) and reuses
+  the object for both mode detection and the AudioPanel display — eliminating a duplicate
+  `open_audio()` call
+- `on_manage_modes()` now receives and persists `detect_frames` and `detect_default`
+  alongside `modes` and `active_mode`
+
+---
+
+## [0.7.1] - Thu 23 Apr 2026 11:52 CDT
+
+### Added
+- **Edit > Rename File… (F2)** — renames the current audio file in-place:
+  - Pre-fills the dialog with the current filename (fully selected, ready to type)
+  - Creates a `_backup` copy before moving; automatically restores on failure
+  - Warns if the new extension is not a recognised audio format (`.mp3 .wav .ogg .flac`),
+    with a Yes/No confirmation to proceed anyway
+  - Warns before overwriting an existing file at the destination path
+  - After a successful rename: updates `config.directory_audio_files[current_file_index]`,
+    reloads the file, and shows a confirmation with the backup filename
+  - Keyboard handling: arrow keys work inside the line edit; Enter confirms; Escape cancels
+  - Application-level event filter temporarily removed during the dialog (matching the
+    pattern used in tag-writer) so arrow keys are not captured by the main window
+- **`backup_file(file_path)`** in `file_utils.py` — creates a `_backup` / `_backup1` …
+  copy using `shutil.copy2`; returns the backup path or `None` on failure
+
+---
+
+## [0.7.0] - Thu 23 Apr 2026 11:04 CDT
+
+### Added
+- **Phase 7 — Modes**
+
+- **Mode dropdown in toolbar** — `QComboBox` listing all defined mode names; switching
+  fires `on_switch_mode()` which: dirty-checks for unsaved edits (warns before discarding),
+  calls `config.set_active_mode()`, `metadata_manager.reload_mode()`,
+  `metadata_panel.rebuild_fields()`, and reloads the current file so the new field set
+  reads fresh tags; reverting the combo (signals blocked) if the user cancels the dirty
+  check dialog
+- **`MetadataPanel.rebuild_fields()`** — tears down the existing scroll area, clears all
+  widget dicts, calls `_build_form()` to recreate the form from the current mode spec,
+  and reinstalls event filters; `_setup_ui()` refactored into `_setup_ui()` +
+  `_build_form()` with a stored `self._scroll` reference to enable the teardown
+- **Manage Modes dialog** (Tools > Manage Modes…):
+  - *Left panel* — `QListWidget` of mode names with Add / Rename / Delete / Reset to
+    Default controls
+  - *Right panel* — 4-column `QTableWidget` (Label · Frame ID · Widget · Max Chars) with
+    direct in-place editing; Widget column uses `_ComboDelegate` (inline `QComboBox`
+    showing `line` / `text`) on double-click
+  - *Field controls* — Add Field (inserts a new row and starts editing), Remove, ↑ Up,
+    ↓ Down for reordering
+  - *OK* validates that no mode has an empty field list; *Cancel* discards all changes
+  - Changes written to `config.modes` and persisted to JSON on OK
+- **Tools menu** added to the menu bar (between View and Help) with Manage Modes… action
+- **`on_switch_mode(mode_name)`** in `FileOpsMixin` — mode-switching handler wired to the
+  toolbar combo
+- **`_has_unsaved_edits()`** in `FileOpsMixin` — compares current UI values against the
+  metadata manager to detect unsaved changes before a mode switch
+
+### Technical
+- `DEFAULT_MODES` in `constants.py` already defined the full field specs for all three
+  built-in modes; Phase 7 wires them into a live UI control for the first time
+- `Config.get_mode_fields()`, `set_active_mode()`, `reset_mode_to_default()` — all
+  pre-existing helpers now fully exercised by the live mode switch flow
+
+---
+
 ## [0.6.3] - Thu 23 Apr 2026 09:55 CDT
 
 ### Fixed
@@ -400,6 +491,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v0.7.2** - Thu 23 Apr 2026: Configurable auto-detect mode on load — `detect_mode()` rules-driven;
+  View > toggle; Manage Modes dialog gains Detect Frame + Default Mode controls
+- **v0.7.1** - Thu 23 Apr 2026: Edit > Rename File (F2) — in-place rename with `_backup`, extension
+  warning, directory-list update, and auto-restore on failure
+- **v0.7.0** - Thu 23 Apr 2026: Phase 7 — mode toolbar combo, `rebuild_fields()`, Manage Modes dialog
+  (add/rename/delete/reset modes; add/remove/reorder fields; Widget type delegate)
 - **v0.6.0** - Wed 22 Apr 2026: Phase 6 — 72-test pytest suite (mutagen_utils, audio_utils, file_utils,
   config, metadata); PyInstaller spec + build_exe.ps1; GitHub Actions CI (Python 3.11 + 3.12)
 - **v0.5.0** - Wed 22 Apr 2026: Phase 5 — ThemeManager (8 themes), ThemeMixin (zoom, dark toggle,
