@@ -5,6 +5,25 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.3] - Thu 23 Apr 2026 17:04 CDT
+
+### Fixed
+- **Auto-detect mode regression — archival files misidentified as Music** — the original
+  Music discriminator (`TPE1`) fired on every HSTL archival recording because the batch
+  pipeline statically writes `TPE1 = "Harry S. Truman Library"` on all files, preventing
+  ATW from switching back to Archival Recording mode when loading from Scientific or Music
+- **Music discriminator changed `TPE1` → `TRCK`** (Track Number) — archival and
+  scientific recordings never carry a track number; music files reliably do; the new rule
+  correctly distinguishes Music from HSTL archival files regardless of static `TPE1` content
+- **Config migration** — `load_config()` automatically replaces any saved
+  `"Music": "TPE1"` detect-frame with `"TRCK"` on next launch; no user action needed in
+  Manage Modes
+- **Test fragility** — `test_save_and_reload_description`, `test_json_roundtrip_preserves_all_fields`,
+  and the `mgr` fixture now call `reload_mode('Archival Recording')` explicitly so they
+  cannot be broken by whatever `active_mode` the user's saved config happens to contain
+
+---
+
 ## [0.7.2] - Thu 23 Apr 2026 13:41 CDT
 
 ### Added
@@ -491,6 +510,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v0.7.3** - Thu 23 Apr 2026: Auto-detect regression fix — archival files misidentified as Music;
+  Music discriminator TPE1→TRCK; config migration; test fragility fixed
 - **v0.7.2** - Thu 23 Apr 2026: Configurable auto-detect mode on load — `detect_mode()` rules-driven;
   View > toggle; Manage Modes dialog gains Detect Frame + Default Mode controls
 - **v0.7.1** - Thu 23 Apr 2026: Edit > Rename File (F2) — in-place rename with `_backup`, extension

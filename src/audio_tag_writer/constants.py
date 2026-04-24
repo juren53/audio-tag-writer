@@ -6,7 +6,7 @@ APP_NAME = "Audio Tag Writer"
 APP_VERSION = "0.7.3"
 APP_TIMESTAMP = "2026-04-23 17:04"
 APP_ORGANIZATION = "SynchroSoft"
-APP_USER_MODEL_ID = "SynchroSoft.AudioTagWriter.ATW.0.7.2"
+APP_USER_MODEL_ID = "SynchroSoft.AudioTagWriter.ATW.0.7.3"
 GITHUB_REPO = "juren53/audio-tag-writer"
 
 AUDIO_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.flac']
