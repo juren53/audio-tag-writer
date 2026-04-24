@@ -97,17 +97,6 @@ class MenuMixin:
 
         view_menu.addSeparator()
 
-        self.auto_detect_action = QAction("&Auto-detect Mode on Load", self)
-        self.auto_detect_action.setCheckable(True)
-        self.auto_detect_action.setChecked(config.auto_detect_mode)
-        self.auto_detect_action.setToolTip(
-            "Automatically switch the metadata mode when opening a file"
-        )
-        self.auto_detect_action.triggered.connect(self.on_toggle_auto_detect)
-        view_menu.addAction(self.auto_detect_action)
-
-        view_menu.addSeparator()
-
         self.dark_mode_action = QAction("Toggle &Dark Mode", self)
         self.dark_mode_action.setShortcut("Ctrl+D")
         self.dark_mode_action.setCheckable(True)
@@ -136,6 +125,17 @@ class MenuMixin:
         zoom_reset_act.triggered.connect(self.reset_zoom)
         view_menu.addAction(zoom_reset_act)
 
+        view_menu.addSeparator()
+
+        self.auto_detect_action = QAction("&Auto-detect Mode on Load", self)
+        self.auto_detect_action.setCheckable(True)
+        self.auto_detect_action.setChecked(config.auto_detect_mode)
+        self.auto_detect_action.setToolTip(
+            "Automatically switch the metadata mode when opening a file"
+        )
+        self.auto_detect_action.triggered.connect(self.on_toggle_auto_detect)
+        view_menu.addAction(self.auto_detect_action)
+
         # ── Tools ─────────────────────────────────────────────────────
         tools_menu = mb.addMenu("&Tools")
 
@@ -154,6 +154,11 @@ class MenuMixin:
         changelog_act = QAction("&Changelog…", self)
         changelog_act.triggered.connect(self.on_changelog)
         help_menu.addAction(changelog_act)
+
+        issue_log_act = QAction("&Issue Log…", self)
+        issue_log_act.setToolTip("Open the GitHub issue tracker in your browser")
+        issue_log_act.triggered.connect(self.on_issue_log)
+        help_menu.addAction(issue_log_act)
 
         help_menu.addSeparator()
 

@@ -5,6 +5,22 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.4] - Thu 23 Apr 2026 19:48 CDT
+
+### Changed
+- **Scientific mode** — removed "Accession Number" (`TALB`) from the default field profile;
+  accession numbers are an archival concept and do not belong in scientific recordings
+
+### Added
+- **Help > Issue Log…** — opens the GitHub issue tracker in the default browser
+  (`https://github.com/juren53/audio-tag-writer/issues`)
+
+### Changed (UI)
+- **View menu** — "Auto-detect Mode on Load" moved to the bottom of the View pull-down,
+  below the zoom controls, for cleaner grouping
+
+---
+
 ## [0.7.3] - Thu 23 Apr 2026 17:04 CDT
 
 ### Fixed
@@ -510,6 +526,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v0.7.4** - Thu 23 Apr 2026: Remove Accession Number from Scientific mode; Help > Issue Log…;
+  Auto-detect menu item moved to bottom of View menu
 - **v0.7.3** - Thu 23 Apr 2026: Auto-detect regression fix — archival files misidentified as Music;
   Music discriminator TPE1→TRCK; config migration; test fragility fixed
 - **v0.7.2** - Thu 23 Apr 2026: Configurable auto-detect mode on load — `detect_mode()` rules-driven;

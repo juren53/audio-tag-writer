@@ -60,6 +60,7 @@ class HelpMixin:
 
     _README_URL    = "https://github.com/juren53/audio-tag-writer/blob/master/README.md"
     _CHANGELOG_URL = "https://github.com/juren53/audio-tag-writer/blob/master/CHANGELOG.md"
+    _ISSUES_URL    = "https://github.com/juren53/audio-tag-writer/issues"
 
     def on_readme(self):
         """Show README.md in a resizable dialog, falling back to the GitHub URL."""
@@ -142,6 +143,16 @@ class HelpMixin:
                 self, "Changelog",
                 f"Could not open changelog.\n\nURL: {self._CHANGELOG_URL}"
             )
+
+    def on_issue_log(self):
+        """Open the GitHub issue tracker in the default browser."""
+        import webbrowser
+        try:
+            webbrowser.open(self._ISSUES_URL)
+        except Exception as e:
+            logger.error(f"Error opening issue log URL: {e}")
+            QMessageBox.warning(self, "Issue Log",
+                                f"Could not open issue log.\n\nURL: {self._ISSUES_URL}")
 
     @staticmethod
     def _find_file(filename):
