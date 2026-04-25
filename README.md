@@ -1,6 +1,6 @@
 # Audio Tag Writer
 
-A PyQt6 desktop application for reading and editing ID3 metadata tags in audio files. Designed for archivists, researchers, and musicians who need accurate, repeatable metadata workflows across large audio collections.
+A desktop application for reading and editing ID3 metadata tags in audio files. Designed for archivists, researchers, and musicians who need accurate, repeatable metadata workflows across large audio collections.
 
 ## Features
 
@@ -25,20 +25,24 @@ All dependencies are installed automatically by the launcher scripts.
 
 ## Quick Start
 
+### Windows (PowerShell)
+
+Windows 11 executable is available at:
+
+https://github.com/juren53/audio-tag-writer/releases
+
+```powershell
+git clone https://github.com/juren53/audio-tag-writer.git
+cd audio-tag-writer
+.\run.ps1
+```
+
 ### Linux / macOS
 
 ```bash
 git clone https://github.com/juren53/audio-tag-writer.git
 cd audio-tag-writer
 ./run.sh
-```
-
-### Windows (PowerShell)
-
-```powershell
-git clone https://github.com/juren53/audio-tag-writer.git
-cd audio-tag-writer
-.\run.ps1
 ```
 
 The launcher will locate Python, create a virtual environment under `venv/`, install dependencies, and start the app. Dependencies are only reinstalled when `requirements.txt` changes.

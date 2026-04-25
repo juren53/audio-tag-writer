@@ -2,10 +2,7 @@
 
 ## Project Overview
 
-`audio-tag-writer` is a PyQt6 desktop application for viewing and editing **ID3 metadata** in
-audio files (MP3, WAV, OGG, FLAC). It is the audio counterpart to
-`C:\Users\juren\Projects\tag-writer`, which performs the same function for IPTC/XMP/EXIF
-metadata in image files.
+`audio-tag-writer` is a PyQt6 desktop application for viewing and editing **ID3 metadata** in audio files (MP3, WAV, OGG, FLAC). It is the audio counterpart to `C:\Users\juren\Projects\tag-writer`, performing the same function for IPTC/XMP/EXIF metadata in image files.
 
 The app provides a form-based UI where an archivist can:
 - Load an audio file via file browser or directory navigation

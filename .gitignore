@@ -11,3 +11,10 @@ build/
 .env
 .venv
 venv/
+
+# Test audio/binary files
+testing/*.mp3
+testing/*.wav
+testing/*.ogg
+testing/*.flac
+testing/*.zip
