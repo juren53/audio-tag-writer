@@ -294,9 +294,11 @@ class FileOpsMixin:
             self.set_status(f"Mode: {mode_name}")
 
     def _has_unsaved_edits(self) -> bool:
-        """Return True if any form field value differs from the loaded metadata."""
+        """Return True if any user-editable form field differs from loaded metadata."""
         from PyQt6.QtWidgets import QTextEdit as _QTextEdit
         for spec in self.metadata_manager.get_field_specs():
+            if spec.get('widget') == 'hidden':
+                continue
             label = spec['label']
             widget = self.metadata_panel._field_widgets.get(label)
             if widget is None:

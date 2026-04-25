@@ -84,7 +84,10 @@ def safe_get_text(tags, frame_id: str, default: str = '') -> str:
             return default
         text = getattr(frame, 'text', None)
         if text:
-            return text[0] if isinstance(text, list) else str(text)
+            # Convert to str explicitly — some frames (e.g. TDRC) use
+            # ID3TimeStamp objects rather than plain strings.
+            val = text[0] if isinstance(text, list) else text
+            return str(val) if val is not None else default
         return default
     except Exception as e:
         logger.warning(f"Error reading frame '{frame_id}': {e}")

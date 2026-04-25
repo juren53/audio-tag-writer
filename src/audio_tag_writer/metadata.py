@@ -10,8 +10,8 @@ from datetime import datetime
 import mutagen
 from mutagen.id3 import (
     ID3, ID3NoHeaderError,
-    TIT2, TALB, TPE1, TPE2, TCON, TCOM, TRCK, TDRC, TPUB, TCOP,
-    TOFN, TRDA, TIT1, TXXX, COMM, IPLS,
+    TIT1, TIT2, TIT3, TALB, TPE1, TPE2, TCON, TCOM, TRCK, TDRC, TPUB, TCOP,
+    TOFN, TRDA, TXXX, COMM, IPLS, TEXT, TYER, TORY, TDAT,
 )
 
 from .config import config
@@ -36,7 +36,13 @@ class MetadataManager:
     def _rebuild_from_mode(self, mode_name=None):
         """Rebuild field list from the given (or active) mode spec."""
         self._field_specs = config.get_mode_fields(mode_name)
-        self._values = {spec['label']: '' for spec in self._field_specs}
+        self._values = {}
+        for spec in self._field_specs:
+            label = spec['label']
+            if spec.get('widget') == 'hidden':
+                self._values[label] = spec.get('auto_value', '')
+            else:
+                self._values[label] = ''
 
     def reload_mode(self, mode_name=None):
         """Switch to a different mode, clearing current values."""
@@ -60,7 +66,7 @@ class MetadataManager:
         return dict(self._values)
 
     def clear(self):
-        self._values = {spec['label']: '' for spec in self._field_specs}
+        self._rebuild_from_mode()
         self.current_path = None
 
     # ------------------------------------------------------------------
@@ -85,7 +91,19 @@ class MetadataManager:
                 frame_id = spec['frame_id']
                 max_chars = spec.get('max_chars', 2000)
 
+                # Hidden fields are auto-generated on save; skip reading from file.
+                if spec.get('widget') == 'hidden':
+                    continue
+
                 raw = self._read_frame(tags, frame_id)
+
+                # Alias fallback: try each alias in order if primary frame is empty.
+                if not raw:
+                    for alias in spec.get('aliases', []):
+                        raw = self._read_frame(tags, alias)
+                        if raw:
+                            break
+
                 self._values[label] = self._sanitize_value(raw, max_chars)
 
             logger.info(f"Loaded metadata from '{path}'")
@@ -97,6 +115,12 @@ class MetadataManager:
         except Exception as e:
             logger.error(f"Unexpected error loading '{path}': {e}")
             return False
+
+    # Mutagen converts these ID3v2.3 frames to v2.4 equivalents on load.
+    _V23_TO_V24 = {
+        'TRDA': 'TDRC',  # Recording Dates → Recording Time
+        'TORY': 'TDOR',  # Original Release Year → Original Release Time
+    }
 
     def _read_frame(self, tags, frame_id: str) -> str:
         """Read a single frame value from an ID3 tag object."""
@@ -117,7 +141,11 @@ class MetadataManager:
                     return '; '.join(parts)
                 return ''
 
-            return safe_get_text(tags, frame_id)
+            raw = safe_get_text(tags, frame_id)
+            # Fall back to v2.4 equivalent if mutagen converted the v2.3 frame.
+            if not raw and frame_id in self._V23_TO_V24:
+                raw = safe_get_text(tags, self._V23_TO_V24[frame_id])
+            return raw
 
         except Exception as e:
             logger.warning(f"Error reading frame '{frame_id}': {e}")
@@ -150,11 +178,26 @@ class MetadataManager:
         for spec in self._field_specs:
             label = spec['label']
             frame_id = spec['frame_id']
-            value = self._values.get(label, '').strip()
+
+            if spec.get('widget') == 'hidden':
+                auto_val = spec.get('auto_value', '')
+                if auto_val == '__app_version__':
+                    from .constants import APP_NAME, APP_VERSION
+                    value = f"{APP_NAME} v{APP_VERSION}"
+                else:
+                    value = auto_val
+            else:
+                value = self._values.get(label, '').strip()
+
             self._write_frame(tags, frame_id, value)
 
-        # Enforce ID3v2.3 for both MP3 and WAV — TRDA and IPLS are v2.3-only frames
-        # and are silently dropped by the v2.4 encoder if we don't do this.
+            for alias in spec.get('aliases', []):
+                self._write_frame(tags, alias, value)
+
+            if spec.get('date_field'):
+                self._write_date_derived(tags, value)
+
+        # Enforce ID3v2.3 — TRDA, TDAT, TYER, TORY, IPLS are v2.3-only frames.
         tags.update_to_v23()
         audio.save(v2_version=3)
 
@@ -163,10 +206,12 @@ class MetadataManager:
 
     # Standard frame classes keyed by frame ID
     _SIMPLE_FRAME_MAP = {
-        'TIT2': TIT2, 'TALB': TALB, 'TPE1': TPE1, 'TPE2': TPE2,
+        'TIT1': TIT1, 'TIT2': TIT2, 'TIT3': TIT3,
+        'TALB': TALB, 'TPE1': TPE1, 'TPE2': TPE2,
         'TCON': TCON, 'TCOM': TCOM, 'TRCK': TRCK, 'TDRC': TDRC,
         'TPUB': TPUB, 'TCOP': TCOP, 'TOFN': TOFN,
-        'TRDA': TRDA, 'TIT1': TIT1,
+        'TRDA': TRDA, 'TEXT': TEXT,
+        'TYER': TYER, 'TORY': TORY, 'TDAT': TDAT,
     }
 
     def _write_frame(self, tags, frame_id: str, value: str):
@@ -228,6 +273,33 @@ class MetadataManager:
             tags['IPLS'] = IPLS(encoding=3, people=people)
         else:
             tags.delall('IPLS')
+
+    def _write_date_derived(self, tags, date_str: str):
+        """
+        Write auxiliary ID3v2.3 date frames derived from date_str.
+        Expects ISO format (YYYY, YYYY-MM, or YYYY-MM-DD); skips derived
+        frames gracefully if the value doesn't parse.
+        """
+        for fid in ('TYER', 'TORY', 'TDAT'):
+            tags.delall(fid)
+        tags.delall('TXXX:ICRD')
+
+        if not date_str:
+            return
+
+        parts = [p.strip() for p in date_str.split('-')]
+        year  = parts[0] if len(parts) > 0 and parts[0].isdigit() and len(parts[0]) == 4 else ''
+        month = parts[1] if len(parts) > 1 and parts[1].isdigit() else ''
+        day   = parts[2] if len(parts) > 2 and parts[2].isdigit() else ''
+
+        if year:
+            tags['TYER'] = TYER(encoding=3, text=[year])
+            tags['TORY'] = TORY(encoding=3, text=[year])
+
+        if month and day:
+            tags['TDAT'] = TDAT(encoding=3, text=[day.zfill(2) + month.zfill(2)])
+
+        tags['TXXX:ICRD'] = TXXX(encoding=3, desc='ICRD', text=[date_str])
 
     # ------------------------------------------------------------------
     # Export / Import

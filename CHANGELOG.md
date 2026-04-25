@@ -5,6 +5,35 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.5] - Sat 25 Apr 2026 02:56 CDT
+
+### Changed — Archival Recording mode (full metadata profile rewrite)
+- **Field set expanded** from 10 to 13 visible fields; three hidden fields auto-written on every save
+- **Description** primary frame changed `COMM` → `TIT3`; on write, value fans out to six frames simultaneously: `TIT3`, `COMM`, `TXXX:COMM`, `TXXX:ISBJ`, `TXXX:dc:description`, `TXXX:xmpDM:logComment`, `TXXX:©cmt`
+- **Date Recorded** primary frame changed `TXXX:DateRecorded` → `TRDA`; on write, also derives and writes `TYER`, `TORY`, `TDAT` (DDMM), and `TXXX:ICRD` from the same ISO date value
+- **Location** frame changed `TXXX:Location` → `TXXX:TLOC`
+- **Accession Number** now also writes alias `TXXX:IPRD`
+- **Speakers** (`IPLS`) now also writes alias `TXXX:IPLS`
+- **Production/Copyright** (`TPUB`) now also writes aliases `TXXX:©pub`, `TXXX:dc:publisher`
+
+### Added — Archival Recording mode new fields
+- **Collection** (`TXXX:grouping`) — content grouping / collection name
+- **Source URL** (`TXXX:WOAS`) — primary institutional source URL
+- **NAC URL** (`TXXX:WXXX`) — National Archives catalog URL
+- **Institution ID** (`TXXX:ISRC`) — institutional identifier
+
+### Added — Hidden auto-written fields (not shown in UI)
+- **Artist** (`TPE1`) — written with configured institution value on every save
+- **Genre** (`TCON`) — written as `speech` on every save
+- **Tagging Software** (`TEXT`) — written as `Audio Tag Writer vX.X.X` on every save, replacing any prior tagging software attribution
+
+### Fixed
+- **Alias read fallback** — if a field's primary frame is absent, ATW now tries each alias in order before leaving the field blank; allows reading files tagged by the FFmpeg pipeline whose Description lives in `TXXX:COMM` rather than a proper `COMM` frame
+- **ID3v2.3 → v2.4 frame conversion** — mutagen silently converts `TRDA` → `TDRC` and `TORY` → `TDOR` on load; `_read_frame` now checks the v2.4 equivalent when the v2.3 frame is absent
+- **`safe_get_text` returns plain `str`** — date-related frames (e.g. `TDRC`) store `ID3TimeStamp` objects; the function now calls `str()` before returning so `_sanitize_value` accepts the value
+
+---
+
 ## [0.7.4] - Thu 23 Apr 2026 19:48 CDT
 
 ### Changed

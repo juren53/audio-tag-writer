@@ -3,10 +3,10 @@ Audio Tag Writer - Constants, version info, and default mode definitions.
 """
 
 APP_NAME = "Audio Tag Writer"
-APP_VERSION = "0.7.4"
-APP_TIMESTAMP = "2026-04-23 19:48"
+APP_VERSION = "0.7.5"
+APP_TIMESTAMP = "2026-04-25 02:56"
 APP_ORGANIZATION = "SynchroSoft"
-APP_USER_MODEL_ID = "SynchroSoft.AudioTagWriter.ATW.0.7.4"
+APP_USER_MODEL_ID = "SynchroSoft.AudioTagWriter.ATW.0.7.5"
 GITHUB_REPO = "juren53/audio-tag-writer"
 
 AUDIO_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.flac']
@@ -27,16 +27,29 @@ DEFAULT_DETECT_DEFAULT = "Archival Recording"
 
 DEFAULT_MODES = {
     "Archival Recording": [
-        {"label": "Title",                "frame_id": "TIT2",            "widget": "line", "max_chars": 2000},
-        {"label": "Description",          "frame_id": "COMM",            "widget": "text", "max_chars": 1000},
-        {"label": "Accession Number",     "frame_id": "TALB",            "widget": "line", "max_chars": 2000},
-        {"label": "Speakers",             "frame_id": "IPLS",            "widget": "line", "max_chars": 2000},
-        {"label": "Date Recorded",        "frame_id": "TXXX:DateRecorded","widget": "line", "max_chars": 2000},
-        {"label": "Restrictions",         "frame_id": "TCOP",            "widget": "line", "max_chars": 2000},
-        {"label": "Location",             "frame_id": "TXXX:Location",   "widget": "line", "max_chars": 2000},
-        {"label": "Production/Copyright", "frame_id": "TPUB",            "widget": "line", "max_chars": 2000},
-        {"label": "Original Filename",    "frame_id": "TOFN",            "widget": "line", "max_chars": 2000},
-        {"label": "Credit",               "frame_id": "TXXX:Credit",     "widget": "line", "max_chars": 2000},
+        # --- User-editable fields ---
+        {"label": "Title",               "frame_id": "TIT2",          "widget": "line", "max_chars": 2000},
+        {"label": "Description",         "frame_id": "TIT3",          "widget": "text", "max_chars": 1000,
+         "aliases": ["COMM", "TXXX:COMM", "TXXX:ISBJ", "TXXX:dc:description", "TXXX:xmpDM:logComment", "TXXX:©cmt"]},
+        {"label": "Accession Number",    "frame_id": "TALB",          "widget": "line", "max_chars": 2000,
+         "aliases": ["TXXX:IPRD"]},
+        {"label": "Speakers",            "frame_id": "IPLS",          "widget": "line", "max_chars": 2000,
+         "aliases": ["TXXX:IPLS"]},
+        {"label": "Date Recorded",       "frame_id": "TRDA",          "widget": "line", "max_chars": 2000,
+         "date_field": True},
+        {"label": "Restrictions",        "frame_id": "TCOP",          "widget": "line", "max_chars": 2000},
+        {"label": "Location",            "frame_id": "TXXX:TLOC",     "widget": "line", "max_chars": 2000},
+        {"label": "Production/Copyright","frame_id": "TPUB",          "widget": "line", "max_chars": 2000,
+         "aliases": ["TXXX:©pub", "TXXX:dc:publisher"]},
+        {"label": "Original Filename",   "frame_id": "TOFN",          "widget": "line", "max_chars": 2000},
+        {"label": "Collection",          "frame_id": "TXXX:grouping", "widget": "line", "max_chars": 2000},
+        {"label": "Source URL",          "frame_id": "TXXX:WOAS",     "widget": "line", "max_chars": 2000},
+        {"label": "NAC URL",             "frame_id": "TXXX:WXXX",     "widget": "line", "max_chars": 2000},
+        {"label": "Institution ID",      "frame_id": "TXXX:ISRC",     "widget": "line", "max_chars": 2000},
+        # --- Hidden auto-written fields (not shown in UI) ---
+        {"label": "Artist",           "frame_id": "TPE1", "widget": "hidden", "auto_value": "Harry S. Truman Library"},
+        {"label": "Genre",            "frame_id": "TCON", "widget": "hidden", "auto_value": "speech"},
+        {"label": "Tagging Software", "frame_id": "TEXT", "widget": "hidden", "auto_value": "__app_version__"},
     ],
     "Music": [
         {"label": "Title",        "frame_id": "TIT2",        "widget": "line", "max_chars": 2000},

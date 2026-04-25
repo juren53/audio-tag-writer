@@ -59,6 +59,9 @@ class MetadataPanel(QWidget):
             widget_type = spec.get('widget', 'line')
             max_chars = spec.get('max_chars', 2000)
 
+            if widget_type == 'hidden':
+                continue
+
             if widget_type == 'text':
                 container, widget, char_label = self._make_text_widget(label_text, max_chars)
                 self._char_labels[label_text] = char_label
