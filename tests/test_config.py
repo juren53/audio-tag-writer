@@ -157,7 +157,7 @@ def test_builtin_modes_overwrite_stale_frame_ids(tmp_path):
     loc = next(
         f for f in cfg.modes['Archival Recording'] if f['label'] == 'Location'
     )
-    assert loc['frame_id'] == 'TXXX:Location'
+    assert loc['frame_id'] == 'TXXX:TLOC'
 
 
 def test_custom_mode_preserved_on_load(tmp_path):
