@@ -57,4 +57,5 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=os.path.join('assets', 'ICON_atw.ico'),
+    version='version_info.txt',
 )

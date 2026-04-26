@@ -75,8 +75,9 @@ class MenuMixin:
 
         edit_menu.addSeparator()
 
-        copy_path_act = QAction("Copy &Path to Clipboard", self)
+        copy_path_act = QAction("Copy &FQFN to Clipboard", self)
         copy_path_act.setShortcut("Ctrl+Shift+C")
+        copy_path_act.setToolTip("Copy the fully qualified file name to the clipboard")
         copy_path_act.triggered.connect(self.on_copy_path)
         edit_menu.addAction(copy_path_act)
 
@@ -130,6 +131,7 @@ class MenuMixin:
         self.auto_detect_action = QAction("&Auto-detect Mode on Load", self)
         self.auto_detect_action.setCheckable(True)
         self.auto_detect_action.setChecked(config.auto_detect_mode)
+        self.auto_detect_action.setIconText("Auto Detect")
         self.auto_detect_action.setToolTip(
             "Automatically switch the metadata mode when opening a file"
         )
@@ -223,6 +225,8 @@ class MenuMixin:
         self.mode_combo.setCurrentText(config.get_active_mode())
         self.mode_combo.currentTextChanged.connect(self.on_switch_mode)
         tb.addWidget(self.mode_combo)
+
+        tb.addAction(self.auto_detect_action)
 
         tb.addSeparator()
 

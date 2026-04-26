@@ -198,10 +198,10 @@ class NavigationMixin:
         self.set_status("Fields cleared")
 
     def on_copy_path(self):
-        """Copy the fully qualified file path to the clipboard."""
+        """Copy the fully qualified file name to the clipboard."""
         if config.selected_file:
             QApplication.clipboard().setText(config.selected_file)
-            self.set_status(f"Copied to clipboard:  {config.selected_file}")
+            self.set_status(f"Copied FQFN to clipboard:  {config.selected_file}")
 
     # ------------------------------------------------------------------
     # Recent files menu

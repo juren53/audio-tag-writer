@@ -187,16 +187,31 @@ class AudioPanel(QWidget):
                 f"</tr>"
             )
 
+        def row_if(label, key):
+            val = info.get(key, '--')
+            if val == '--':
+                return ''
+            return (
+                f"<tr>"
+                f"<td style='font-weight:bold; padding-right:8px; white-space:nowrap;'>{label}:</td>"
+                f"<td>{val}</td>"
+                f"</tr>"
+            )
+
         filename = info.get('filename', '--')
         return (
             f"<b>{filename}</b>"
             f"<table style='margin-top:6px; border-spacing:2px 4px;'>"
-            + row('Duration',    'duration')
-            + row('Bitrate',     'bitrate')
-            + row('Sample Rate', 'sample_rate')
-            + row('Channels',    'channels')
-            + row('Format',      'format')
-            + row('File Size',   'file_size')
-            + row('Modified',    'modified')
+            + row('Duration',     'duration')
+            + row('Bitrate',      'bitrate')
+            + row_if('Bitrate Mode', 'bitrate_mode')
+            + row('Sample Rate',  'sample_rate')
+            + row('Channels',     'channels')
+            + row_if('Stereo Mode',  'stereo_mode')
+            + row_if('MPEG Version', 'mpeg_version')
+            + row('Format',       'format')
+            + row_if('Compression',  'compression')
+            + row('File Size',    'file_size')
+            + row('Modified',     'modified')
             + "</table>"
         )

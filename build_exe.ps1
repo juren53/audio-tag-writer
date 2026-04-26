@@ -21,6 +21,14 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+# ── Generate Windows EXE version metadata ────────────────────────
+Write-Host "Generating version_info.txt ..."
+& $VenvPython generate_version_info.py
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Failed to generate version_info.txt."
+    exit 1
+}
+
 # ── Clean previous build artefacts ───────────────────────────────
 foreach ($dir in @("build", "dist")) {
     $fullPath = Join-Path $ScriptDir $dir

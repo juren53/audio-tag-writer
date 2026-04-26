@@ -5,6 +5,22 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.6] - Sat 25 Apr 2026 21:52 CDT
+
+### Added
+- **Auto Detect toolbar button** — checkable "Auto Detect" button added to the toolbar next to the Mode selector; stays in sync with View > Auto-detect Mode on Load; one click toggles auto-detect on load
+- **Additional technical metadata in right panel** — info section now shows Bitrate Mode (CBR/VBR/ABR), Stereo Mode (Stereo/Joint Stereo/Mono), MPEG Version, and Compression (Lossy/Lossless) in addition to existing fields; fields are only shown when the value is available
+- **Windows EXE Properties/Details tab** — `generate_version_info.py` generates `version_info.txt` (PyInstaller VSVersionInfo format) before each build; Product name, File description, Company, Copyright, and version numbers are now embedded in the `.exe` and visible in Windows Explorer Properties > Details
+- **ATW System Architecture Document** (`ATW-SAD.md`) — documents module inventory, data flow, full Archival Recording frame map and alias table, mode auto-detection logic, date derivation table, ID3v2.3/v2.4 conversion table, config schema, and build system
+
+### Changed
+- **Edit > Copy Path to Clipboard** renamed to **Edit > Copy FQFN to Clipboard** — name now correctly reflects that the fully qualified file name is copied
+
+### Updated
+- **README** — reflects full HSTL archival profile, updated Archival Recording mode table with alias columns, new features (Auto Detect button, FQFN, technical metadata panel), updated keyboard shortcut table and project structure
+
+---
+
 ## [0.7.5] - Sat 25 Apr 2026 02:56 CDT
 
 ### Changed — Archival Recording mode (full metadata profile rewrite)
