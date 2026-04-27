@@ -1,0 +1,14 @@
+Failed to remove temporary diredtory:
+C:\Users\user\AppData\Local\Temp\_ME1865842
+
+ This is a known PyInstaller one-file issue on Windows — the bootloader tries to delete its temp directory (_MExxxxxxx in %TEMP%) on exit, but Windows Defender (or another AV) holds a file lock long enough to block the removal. The fix is to set runtime_tmpdir='.' in the spec, which extracts to a   persistent directory next to the exe instead of %TEMP%. No cleanup is attempted on exit, so the error never fires. PyInstaller 6 uses a hash-based name for the extracted dir, so the same build reuses it across launches.
+
+ Summary of what changed and why:
+
+  Root cause: PyInstaller's one-file bootloader extracts all runtime files to %TEMP%\_MExxxxxxx on launch, then tries to rmtree that directory when the process exits. Windows Defender (and many AV tools) scan the extracted DLLs and hold file locks long enough to block the deletion — producing the error dialog even though the app itself closed cleanly.
+
+  Fix: runtime_tmpdir='.' in the spec tells PyInstaller to extract alongside the exe instead of into %TEMP%. No cleanup is attempted on exit, so the error can never fire. PyInstaller 6 uses a content-hash for the extraction directory name, so the same build always reuses the same _ME<hash> folder — no accumulation on repeated launches.
+
+  Side effect to know: a _ME<hash> folder will appear next to the exe after first launch. It's the extracted runtime (~100 MB). When upgrading, the old _ME folder from the previous version can be deleted manually.
+
+  Release: https://github.com/juren53/audio-tag-writer/releases/tag/v0.7.7

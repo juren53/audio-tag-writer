@@ -1,0 +1,32 @@
+I would like to add a feature to automatically detect by populated metadata field which mode ATW should switch to when loading an audio file.
+
+Only Archival Recordings would have a populated Accession Number field
+
+Only a Music file would have a populated Artiist or Album field.  Music and Scientific will never have a populated Accession Number  
+
+If there is a populated Equipment field it is a Scientific recording. 
+
+
+ winget upgrade Anthropic.ClaudeCode
+ 
+ 
+  **Auto-detect mode on file load** — when a file is opened ATW inspects its existing
+  ID3 tags and automatically switches to the best-matching mode before reading metadata,
+  so the right field set is active from the first keystroke
+  
+  
+  
+  
+   Root cause: HSTL batch pipeline sets TPE1 = "Harry S. Truman Library" on
+   every archival recording, so the TPE1 → Music detection rule fired on all
+   archival files, preventing a switch back to Archival Recording mode.
+
+   Fix: change Music discriminator from TPE1 (Artist) to TRCK (Track Number).
+   Archival and scientific recordings never carry a track number; music files
+   reliably do. Config migration in load_config() auto-corrects any saved
+   config that still has Music = "TPE1".
+
+   Also: harden two test_metadata tests (test_save_and_reload_description,
+   test_json_roundtrip_preserves_all_fields) and the mgr fixture to call
+   reload_mode('Archival Recording') explicitly, so they no longer depend on
+   whatever active_mode happens to be in the user's saved config.

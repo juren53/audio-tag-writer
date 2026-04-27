@@ -1,0 +1,10 @@
+v0..7.6
+
+- add button labeled 'Auto Detect' to main UI tool bar next to Mode selector to toggle 'Auto-detect on Load' already working in View pull down menu
+- update README.md
+- create an ATW SAD  (System Architecture Document) 
+    - update/document data mappings and alias table in SAD
+	
+- in Edit/Copy Path to Clipboard - - Path should be FQFN [Fully Qualified FileName]	
+
+C:/Users/juren/Projects/audio-tag-writer/testing/other-mp3-files\La La Land - Mia & Sebastian's Theme x City of Stars ｜ Piano Medley.mp3
