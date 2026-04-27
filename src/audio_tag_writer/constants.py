@@ -3,10 +3,10 @@ Audio Tag Writer - Constants, version info, and default mode definitions.
 """
 
 APP_NAME = "Audio Tag Writer"
-APP_VERSION = "0.7.6"
-APP_TIMESTAMP = "2026-04-25 21:52"
+APP_VERSION = "0.7.7"
+APP_TIMESTAMP = "2026-04-27 10:51"
 APP_ORGANIZATION = "SynchroSoft"
-APP_USER_MODEL_ID = "SynchroSoft.AudioTagWriter.ATW.0.7.6"
+APP_USER_MODEL_ID = "SynchroSoft.AudioTagWriter.ATW.0.7.7"
 GITHUB_REPO = "juren53/audio-tag-writer"
 
 AUDIO_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.flac']

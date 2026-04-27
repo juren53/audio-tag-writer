@@ -12,6 +12,9 @@ build/
 .venv
 venv/
 
+# PyInstaller one-file runtime extraction dirs (created next to exe when runtime_tmpdir='.')
+_ME*/
+
 # Test audio/binary files
 testing/*.mp3
 testing/*.wav

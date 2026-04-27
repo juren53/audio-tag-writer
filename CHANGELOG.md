@@ -5,6 +5,13 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.7] - Mon 27 Apr 2026 10:51 CDT
+
+### Fixed
+- **"Failed to remove temporary directory" on exit (Windows)** — PyInstaller's one-file bootloader extracts to `%TEMP%\_MExxxxxxx` and deletes the directory when the app closes; Windows Defender (and other AV tools) frequently hold a file lock on the extracted DLLs long enough to block that deletion, triggering an error dialog even though the app itself closed successfully. Fixed by setting `runtime_tmpdir='.'` in the PyInstaller spec: the runtime files are now extracted to a persistent directory alongside the executable rather than to `%TEMP%`, so no cleanup is attempted and no error is shown.
+
+---
+
 ## [0.7.6] - Sat 25 Apr 2026 21:52 CDT
 
 ### Added
