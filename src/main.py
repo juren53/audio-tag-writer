@@ -112,7 +112,7 @@ class MainWindow(NavigationMixin, FileOpsMixin, MenuMixin, ThemeMixin, HelpMixin
         self.metadata_panel = MetadataPanel(self.metadata_manager)
         splitter.addWidget(self.metadata_panel)
 
-        self.audio_panel = AudioPanel()
+        self.audio_panel = AudioPanel(self.metadata_manager)
         splitter.addWidget(self.audio_panel)
 
         splitter.setSizes([660, 440])

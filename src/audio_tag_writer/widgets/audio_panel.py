@@ -6,8 +6,8 @@ import logging
 import os
 
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QFrame, QScrollArea, QSizePolicy,
-    QPushButton, QMessageBox
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QScrollArea, QSizePolicy,
+    QPushButton, QMessageBox, QFileDialog, QMainWindow,
 )
 from PyQt6.QtCore import Qt, QTimer, QUrl
 from PyQt6.QtGui import QPixmap, QDesktopServices
@@ -16,6 +16,15 @@ logger = logging.getLogger(__name__)
 
 _ART_SIZE = 220   # max px for album art display
 
+_IMAGE_MIME = {
+    '.jpg':  'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png':  'image/png',
+    '.gif':  'image/gif',
+    '.bmp':  'image/bmp',
+    '.webp': 'image/webp',
+}
+
 
 class AudioPanel(QWidget):
     """
@@ -23,11 +32,12 @@ class AudioPanel(QWidget):
     Mirrors the ImageViewer panel in tag-writer.
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, metadata_manager=None, parent=None):
         super().__init__(parent)
         self.setMinimumWidth(240)
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         self._current_path = None
+        self._metadata_manager = metadata_manager
         self._setup_ui()
 
     # ------------------------------------------------------------------
@@ -53,6 +63,24 @@ class AudioPanel(QWidget):
         art_layout.addWidget(self._art_label)
 
         layout.addWidget(art_frame, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+        # Art edit buttons
+        art_btn_row = QHBoxLayout()
+        art_btn_row.setSpacing(4)
+
+        self._set_art_button = QPushButton("Set Art…")
+        self._set_art_button.setToolTip("Load an image file as album art")
+        self._set_art_button.setEnabled(False)
+        self._set_art_button.clicked.connect(self._on_set_art)
+        art_btn_row.addWidget(self._set_art_button)
+
+        self._remove_art_button = QPushButton("Remove Art")
+        self._remove_art_button.setToolTip("Remove album art from this file")
+        self._remove_art_button.setEnabled(False)
+        self._remove_art_button.clicked.connect(self._on_remove_art)
+        art_btn_row.addWidget(self._remove_art_button)
+
+        layout.addLayout(art_btn_row)
 
         # Play button
         self._play_button = QPushButton("▶  Play")
@@ -104,6 +132,7 @@ class AudioPanel(QWidget):
         """Update panel with album art and file info for the loaded file."""
         self._current_path = path
         self._play_button.setEnabled(True)
+        self._set_art_button.setEnabled(True)
         self._update_art(tags)
         self._update_info(info_dict)
 
@@ -111,6 +140,8 @@ class AudioPanel(QWidget):
         """Reset panel to empty/placeholder state."""
         self._current_path = None
         self._play_button.setEnabled(False)
+        self._set_art_button.setEnabled(False)
+        self._remove_art_button.setEnabled(False)
         self._show_placeholder_art()
         self._status_label.setText("○  No file loaded")
         self._status_label.setStyleSheet("font-size: 8pt; color: grey;")
@@ -143,10 +174,12 @@ class AudioPanel(QWidget):
             self._art_label.setPixmap(scaled)
             self._status_label.setText("●  Art embedded")
             self._status_label.setStyleSheet("font-size: 8pt; color: green;")
+            self._remove_art_button.setEnabled(True)
         else:
             self._show_placeholder_art()
             self._status_label.setText("○  No album art")
             self._status_label.setStyleSheet("font-size: 8pt; color: grey;")
+            self._remove_art_button.setEnabled(False)
 
     def _extract_apic(self, tags):
         """Return QPixmap from the first APIC frame, or None."""
@@ -169,6 +202,87 @@ class AudioPanel(QWidget):
         self._art_label.setStyleSheet(
             "font-size: 72pt; color: #aaaaaa; background: #f0f0f0;"
         )
+
+    # ------------------------------------------------------------------
+    # Album art edit actions
+    # ------------------------------------------------------------------
+
+    def _on_set_art(self):
+        if not self._current_path:
+            return
+
+        start_dir = os.path.dirname(self._current_path)
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Select Album Art", start_dir,
+            "Image Files (*.jpg *.jpeg *.png *.gif *.bmp *.webp);;All Files (*)"
+        )
+        if not path:
+            return
+
+        ext = os.path.splitext(path)[1].lower()
+        mime_type = _IMAGE_MIME.get(ext, 'image/jpeg')
+
+        try:
+            with open(path, 'rb') as f:
+                image_data = f.read()
+        except Exception as e:
+            QMessageBox.critical(self, "File Error", f"Could not read image file:\n{e}")
+            return
+
+        if self._metadata_manager is None:
+            QMessageBox.critical(self, "Error", "No metadata manager available.")
+            return
+
+        from ..mutagen_utils import AudioFileError
+        try:
+            self._metadata_manager.save_apic_to_file(self._current_path, image_data, mime_type)
+        except AudioFileError as e:
+            QMessageBox.critical(self, "Save Error", str(e))
+            return
+        except Exception as e:
+            QMessageBox.critical(self, "Save Error", f"An unexpected error occurred:\n{e}")
+            return
+
+        self._refresh_art()
+        self._set_main_status(f"Album art updated  —  {os.path.basename(self._current_path)}")
+
+    def _on_remove_art(self):
+        if not self._current_path:
+            return
+
+        if self._metadata_manager is None:
+            QMessageBox.critical(self, "Error", "No metadata manager available.")
+            return
+
+        from ..mutagen_utils import AudioFileError
+        try:
+            self._metadata_manager.remove_apic_from_file(self._current_path)
+        except AudioFileError as e:
+            QMessageBox.critical(self, "Remove Error", str(e))
+            return
+        except Exception as e:
+            QMessageBox.critical(self, "Remove Error", f"An unexpected error occurred:\n{e}")
+            return
+
+        self._refresh_art()
+        self._set_main_status(f"Album art removed  —  {os.path.basename(self._current_path)}")
+
+    def _refresh_art(self):
+        """Reload tags from the current file and refresh the art display."""
+        try:
+            from ..mutagen_utils import open_audio
+            audio = open_audio(self._current_path)
+            self._update_art(audio.tags)
+        except Exception:
+            self._show_placeholder_art()
+            self._remove_art_button.setEnabled(False)
+
+    def _set_main_status(self, message: str):
+        parent = self.parent()
+        while parent and not isinstance(parent, QMainWindow):
+            parent = parent.parent()
+        if parent and hasattr(parent, 'set_status'):
+            parent.set_status(message)
 
     # ------------------------------------------------------------------
     # File info

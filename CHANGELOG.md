@@ -5,6 +5,21 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.8] - Sun 24 May 2026 14:28 CDT
+
+### Added
+- **APIC Album Art write & edit (Issue #4)** — ATW previously only read and displayed embedded album art; it can now write and remove it:
+  - **"Set Art…" button** — appears below the album art display in the right panel; opens a file picker (JPEG, PNG, GIF, BMP, WebP); writes the selected image as the front-cover APIC frame (ID3v2.3, picture type 3)
+  - **"Remove Art" button** — removes all embedded APIC frames from the file; only enabled when art is present; button state updates immediately after any change
+  - **Tools > Set Album Art… (Ctrl+Shift+A)** — same as the panel button, accessible from the menu
+  - **Tools > Remove Album Art** — same as the panel button, accessible from the menu
+  - `MetadataManager.save_apic_to_file(path, image_data, mime_type)` — writes/replaces APIC; enforces ID3v2.3 (`update_to_v23()` + `save(v2_version=3)`) consistent with all other metadata writes
+  - `MetadataManager.remove_apic_from_file(path)` — removes all APIC frames and saves; no-op if no art is present
+  - Both operations are MP3/WAV only; a clear error dialog is shown for unsupported formats
+  - Art display refreshes immediately after set or remove without needing to reload the file
+
+---
+
 ## [0.7.7] - Mon 27 Apr 2026 10:51 CDT
 
 ### Fixed
@@ -578,6 +593,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v0.7.8** - Sun 24 May 2026: APIC album art write & edit — "Set Art…" / "Remove Art" buttons in panel; Tools > Set Album Art… (Ctrl+Shift+A) / Remove Album Art; `save_apic_to_file` + `remove_apic_from_file` in MetadataManager
 - **v0.7.4** - Thu 23 Apr 2026: Remove Accession Number from Scientific mode; Help > Issue Log…;
   Auto-detect menu item moved to bottom of View menu
 - **v0.7.3** - Thu 23 Apr 2026: Auto-detect regression fix — archival files misidentified as Music;

@@ -11,7 +11,7 @@ import mutagen
 from mutagen.id3 import (
     ID3, ID3NoHeaderError,
     TIT1, TIT2, TIT3, TALB, TPE1, TPE2, TCON, TCOM, TRCK, TDRC, TPUB, TCOP,
-    TOFN, TRDA, TXXX, COMM, IPLS, TEXT, TYER, TORY, TDAT,
+    TOFN, TRDA, TXXX, COMM, IPLS, TEXT, TYER, TORY, TDAT, APIC,
 )
 
 from .config import config
@@ -273,6 +273,66 @@ class MetadataManager:
             tags['IPLS'] = IPLS(encoding=3, people=people)
         else:
             tags.delall('IPLS')
+
+    # ------------------------------------------------------------------
+    # Album Art (APIC)
+    # ------------------------------------------------------------------
+
+    def save_apic_to_file(self, path: str, image_data: bytes, mime_type: str) -> bool:
+        """Write or replace the APIC (album art) frame in the file."""
+        ext = os.path.splitext(path)[1].lower()
+        if ext not in ('.mp3', '.wav'):
+            raise AudioFileError(
+                f"Album art writing is only supported for MP3 and WAV files.\n"
+                f"'{os.path.basename(path)}' is a {ext.lstrip('.').upper()} file."
+            )
+        try:
+            audio = open_audio(path)
+            if audio.tags is None:
+                audio.add_tags()
+            tags = audio.tags
+            tags.delall('APIC')
+            tags['APIC:'] = APIC(
+                encoding=3,
+                mime=mime_type,
+                type=3,  # 3 = front cover
+                desc='',
+                data=image_data,
+            )
+            tags.update_to_v23()
+            audio.save(v2_version=3)
+            logger.info(f"Saved APIC to '{path}'")
+            return True
+        except AudioFileError:
+            raise
+        except Exception as e:
+            logger.error(f"Error saving APIC to '{path}': {e}")
+            raise AudioFileError(f"Failed to save album art: {e}") from e
+
+    def remove_apic_from_file(self, path: str) -> bool:
+        """Remove all APIC (album art) frames from the file."""
+        ext = os.path.splitext(path)[1].lower()
+        if ext not in ('.mp3', '.wav'):
+            raise AudioFileError(
+                f"Album art writing is only supported for MP3 and WAV files.\n"
+                f"'{os.path.basename(path)}' is a {ext.lstrip('.').upper()} file."
+            )
+        try:
+            audio = open_audio(path)
+            if audio.tags is None:
+                return True
+            if not audio.tags.getall('APIC'):
+                return True
+            audio.tags.delall('APIC')
+            audio.tags.update_to_v23()
+            audio.save(v2_version=3)
+            logger.info(f"Removed APIC from '{path}'")
+            return True
+        except AudioFileError:
+            raise
+        except Exception as e:
+            logger.error(f"Error removing APIC from '{path}': {e}")
+            raise AudioFileError(f"Failed to remove album art: {e}") from e
 
     def _write_date_derived(self, tags, date_str: str):
         """

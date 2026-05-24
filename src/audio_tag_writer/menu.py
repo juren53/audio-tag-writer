@@ -141,6 +141,19 @@ class MenuMixin:
         # ── Tools ─────────────────────────────────────────────────────
         tools_menu = mb.addMenu("&Tools")
 
+        set_art_act = QAction("&Set Album Art…", self)
+        set_art_act.setShortcut("Ctrl+Shift+A")
+        set_art_act.setToolTip("Load an image file as album art for the current file")
+        set_art_act.triggered.connect(self.on_set_album_art)
+        tools_menu.addAction(set_art_act)
+
+        remove_art_act = QAction("&Remove Album Art", self)
+        remove_art_act.setToolTip("Remove embedded album art from the current file")
+        remove_art_act.triggered.connect(self.on_remove_album_art)
+        tools_menu.addAction(remove_art_act)
+
+        tools_menu.addSeparator()
+
         manage_modes_act = QAction("&Manage Modes…", self)
         manage_modes_act.setToolTip("Add, rename, reorder or delete metadata modes")
         manage_modes_act.triggered.connect(self.on_manage_modes)

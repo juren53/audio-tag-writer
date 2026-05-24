@@ -242,6 +242,26 @@ class FileOpsMixin:
                     self.set_status("Error during rename — manual restore may be needed")
 
     # ------------------------------------------------------------------
+    # Album Art
+    # ------------------------------------------------------------------
+
+    def on_set_album_art(self):
+        """Delegate to AudioPanel's Set Art action."""
+        if not config.selected_file:
+            QMessageBox.warning(self, "No File", "Please open an audio file first.")
+            return
+        if hasattr(self, 'audio_panel'):
+            self.audio_panel._on_set_art()
+
+    def on_remove_album_art(self):
+        """Delegate to AudioPanel's Remove Art action."""
+        if not config.selected_file:
+            QMessageBox.warning(self, "No File", "Please open an audio file first.")
+            return
+        if hasattr(self, 'audio_panel'):
+            self.audio_panel._on_remove_art()
+
+    # ------------------------------------------------------------------
     # View All Tags
     # ------------------------------------------------------------------
 
