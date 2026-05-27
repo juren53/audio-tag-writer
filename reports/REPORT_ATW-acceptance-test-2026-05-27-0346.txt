@@ -1,0 +1,43 @@
+REPORT_ATW-acceptance-test-2026-05-27-0346.txt
+================================================
+Audio Tag Writer v0.7.8 — Acceptance Test Report
+Date/Time: 2026-05-27 03:46
+Platform:  Windows 11 10.0.26200, Python 3.12.10
+================================================
+
+AUTOMATED TEST SUITE
+--------------------
+Runner:    pytest 9.0.3
+Rootdir:   C:\Users\juren\Projects\audio-tag-writer
+Collected: 72 tests
+
+  Module                       Tests    Result
+  -------------------------------------------
+  tests/test_audio_utils.py       13    PASS
+  tests/test_config.py            14    PASS
+  tests/test_file_utils.py        12    PASS
+  tests/test_metadata.py          22    PASS
+  tests/test_mutagen_utils.py     11    PASS
+  -------------------------------------------
+  TOTAL                           72    72 passed in 0.48s
+
+OVERALL RESULT: PASS
+
+NOTES
+-----
+Initial test run on this platform found 3 failures in test_metadata.py
+(test_save_and_reload_description, test_save_and_reload_txxx_field,
+test_json_roundtrip_preserves_all_fields). Root cause: load_from_file()
+called clear() which reset the MetadataManager mode to config.active_mode,
+clobbering any prior reload_mode() call. On this machine active_mode =
+"Music"; tests expected "Archival Recording" mode fields. Two fixes applied:
+
+  1. metadata.py — load_from_file() now resets field values in-place rather
+     than calling clear(), preserving the current mode (_field_specs).
+
+  2. test_metadata.py — test_save_and_reload_txxx_field() given explicit
+     reload_mode('Archival Recording') calls on both manager instances,
+     making the test machine-independent.
+
+Both fixes are behaviour-neutral on Linux LMDE where active_mode defaults
+to "Archival Recording". Fixes committed as be12f13.
