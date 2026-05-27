@@ -160,11 +160,13 @@ def test_save_and_reload_description(mp3_copy):
 
 def test_save_and_reload_txxx_field(mp3_copy):
     mgr = MetadataManager()
+    mgr.reload_mode('Archival Recording')
     mgr.load_from_file(mp3_copy)
     mgr.set_field('Location', 'Wenatchee, WA')
     mgr.save_to_file(mp3_copy)
 
     mgr2 = MetadataManager()
+    mgr2.reload_mode('Archival Recording')
     mgr2.load_from_file(mp3_copy)
     assert mgr2.get_field('Location') == 'Wenatchee, WA'
 

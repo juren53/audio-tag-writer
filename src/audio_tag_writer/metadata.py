@@ -79,7 +79,13 @@ class MetadataManager:
             logger.error(f"File not found: {path}")
             return False
 
-        self.clear()
+        # Reset values only — preserve the current mode (_field_specs unchanged)
+        for spec in self._field_specs:
+            label = spec['label']
+            if spec.get('widget') == 'hidden':
+                self._values[label] = spec.get('auto_value', '')
+            else:
+                self._values[label] = ''
         self.current_path = path
 
         try:
