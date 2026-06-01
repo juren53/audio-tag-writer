@@ -1,0 +1,20 @@
+REPORT_ATW-acceptance-test-2026-05-27-0343.txt
+================================================
+Audio Tag Writer v0.7.8 — Acceptance Test Report
+Date/Time: 2026-05-27 03:43
+Platform:  Windows 11 10.0.26200, Python 3.12.10
+================================================
+
+AUTOMATED TEST SUITE
+--------------------
+Runner:    pytest 9.0.3
+Rootdir:   C:\Users\juren\Projects\audio-tag-writer
+Collected: 22 tests
+
+  Module                  Tests    Result
+  --------------------------------------
+  tests/test_metadata.py     22    FAIL
+  --------------------------------------
+  TOTAL                      22    21 passed, 1 failed in 0.36s
+
+OVERALL RESULT: FAIL
