@@ -7,6 +7,7 @@ Comment=Audio file tag editor
 Exec=/home/juren/Projects/audio-tag-writer/run.sh
 Icon=atw
 Terminal=false
+MimeType=audio/mpeg;audio/x-wav;audio/ogg;audio/flac;audio/x-flac;
 Categories=Audio;Music;Utility;
 StartupNotify=true
 StartupWMClass=AudioTagWriter
