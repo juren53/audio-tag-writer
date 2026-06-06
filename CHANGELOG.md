@@ -5,6 +5,19 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.9] - Sat 06 Jun 2026 CDT
+
+### Added
+- **Linux system integration** — `assets/ATW.desktop` launcher file for registering ATW with
+  the desktop environment:
+  - Appears in the system application menu under Audio/Music/Utility
+  - Appears in the right-click "Open With" context menu for `.mp3`, `.wav`, `.ogg`, and `.flac` files
+  - Launches via `run.sh` with `Path` set to the project root
+  - Icon reference: `atw` (install `assets/ICON_atw_source.png` to `~/.local/share/icons/atw.png`)
+  - Install to `~/.local/share/applications/ATW.desktop`; run `update-desktop-database ~/.local/share/applications/` to activate
+
+---
+
 ## [0.7.8] - Sun 24 May 2026 14:28 CDT
 
 ### Added
@@ -593,6 +606,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v0.7.9** - Sat 06 Jun 2026: Linux system integration — `ATW.desktop` launcher; system menu + right-click "Open With" for mp3/wav/ogg/flac
 - **v0.7.8** - Sun 24 May 2026: APIC album art write & edit — "Set Art…" / "Remove Art" buttons in panel; Tools > Set Album Art… (Ctrl+Shift+A) / Remove Album Art; `save_apic_to_file` + `remove_apic_from_file` in MetadataManager
 - **v0.7.4** - Thu 23 Apr 2026: Remove Accession Number from Scientific mode; Help > Issue Log…;
   Auto-detect menu item moved to bottom of View menu
