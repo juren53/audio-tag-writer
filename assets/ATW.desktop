@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=ATW
+GenericName=Audio Tag Writer
+Comment=Audio file tag editor
+Exec=/home/juren/Projects/audio-tag-writer/run.sh
+Icon=atw
+Terminal=false
+Categories=Audio;Music;Utility;
+StartupNotify=true
+StartupWMClass=AudioTagWriter
+Keywords=audio;tags;metadata;mp3;flac;music;
+Path=/home/juren/Projects/audio-tag-writer
