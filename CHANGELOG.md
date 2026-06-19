@@ -654,6 +654,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v0.7.12** - Thu 19 Jun 2026: Migrate to Icon Manager Module — replaced local `platform.py` icon handling with shared `IconManager`; `IconLoader` init before `QApplication`; per-window AUMID + `WM_SETICON` via `set_taskbar_icon()`; `platform.py` retired to stub
+- **v0.7.11** - Thu 19 Jun 2026: Fix `APP_USER_MODEL_ID` to be version-free — changed from `"SynchroSoft.AudioTagWriter.ATW.0.7.10"` to `"SynchroSoft.ATW"` to fix taskbar pinning across updates
+- **v0.7.10** - Thu 19 Jun 2026: Migrate theming to shared ThemeManager module — QPalette-based theming via `ThemeRegistry`; `ThemeDialog` with colour-swatch preview; config migration for saved theme display names
 - **v0.7.9** - Sat 06 Jun 2026: Linux system integration — `ATW.desktop` launcher; system menu + right-click "Open With" for mp3/wav/ogg/flac
 - **v0.7.8** - Sun 24 May 2026: APIC album art write & edit — "Set Art…" / "Remove Art" buttons in panel; Tools > Set Album Art… (Ctrl+Shift+A) / Remove Album Art; `save_apic_to_file` + `remove_apic_from_file` in MetadataManager
 - **v0.7.4** - Thu 23 Apr 2026: Remove Accession Number from Scientific mode; Help > Issue Log…;
