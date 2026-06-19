@@ -1,449 +1,167 @@
 """
-Audio Tag Writer - ThemeManager class and theme dictionaries.
+Audio Tag Writer - ThemeManager integration.
+
+Sets up the ThemeManager module path and re-exports the helpers the app needs.
+Registers four ATW-specific themes (Warm Light, High Contrast, Monokai,
+GitHub Dark) into the global registry alongside the six built-in themes,
+giving Audio Tag Writer ten themes in total.
 """
 
-import logging
+from __future__ import annotations
+import os
+import sys
 
-logger = logging.getLogger(__name__)
+_TM_PATH = os.path.expanduser("~/Projects/ThemeManager")
+if os.path.isdir(_TM_PATH) and _TM_PATH not in sys.path:
+    sys.path.insert(0, _TM_PATH)
+
+from theme_manager import (  # noqa: F401
+    ThemeColors, UIPalette, Theme, ThemeCategory,
+    get_theme_registry, get_fusion_palette, detect_system_theme,
+)
+
+DEFAULT_THEME = "light"
+
+_DARK_THEMES = {"dark", "solarized_dark", "dracula", "high_contrast", "monokai", "github_dark"}
 
 
-class ThemeManager:
-    """Manages application themes and styling."""
+def is_dark_theme(name: str) -> bool:
+    return name in _DARK_THEMES
 
-    def __init__(self):
-        self.themes = {
-            'Default Light': {
-                'name': 'Default Light',
-                'background': '#fafafa',
-                'text': '#2d3748',
-                'selection_bg': '#4299e1',
-                'selection_text': '#ffffff',
-                'menubar_bg': '#f7fafc',
-                'menubar_text': '#2d3748',
-                'toolbar_bg': '#f7fafc',
-                'statusbar_bg': '#edf2f7',
-                'statusbar_text': '#4a5568',
-                'button_bg': '#e2e8f0',
-                'button_text': '#2d3748',
-                'button_hover': '#cbd5e0',
-                'border': '#cbd5e0'
-            },
-            'Warm Light': {
-                'name': 'Warm Light',
-                'background': '#eee9e0',
-                'text': '#504741',
-                'selection_bg': '#6699cc',
-                'selection_text': '#ffffff',
-                'menubar_bg': '#e6e1d7',
-                'menubar_text': '#504741',
-                'toolbar_bg': '#f0ebe2',
-                'statusbar_bg': '#e1dcd2',
-                'statusbar_text': '#504741',
-                'button_bg': '#e6e1d7',
-                'button_text': '#504741',
-                'button_hover': '#ddd8cf',
-                'border': '#b4aa9a'
-            },
-            'Dark': {
-                'name': 'Dark',
-                'background': '#2b2b2b',
-                'text': '#ffffff',
-                'selection_bg': '#4a9eff',
-                'selection_text': '#ffffff',
-                'menubar_bg': '#3c3c3c',
-                'menubar_text': '#ffffff',
-                'toolbar_bg': '#404040',
-                'statusbar_bg': '#333333',
-                'statusbar_text': '#ffffff',
-                'button_bg': '#454545',
-                'button_text': '#ffffff',
-                'button_hover': '#555555',
-                'border': '#555555'
-            },
-            'Solarized Light': {
-                'name': 'Solarized Light',
-                'background': '#fdf6e3',
-                'text': '#657b83',
-                'selection_bg': '#268bd2',
-                'selection_text': '#fdf6e3',
-                'menubar_bg': '#eee8d5',
-                'menubar_text': '#657b83',
-                'toolbar_bg': '#f5f0e7',
-                'statusbar_bg': '#eee8d5',
-                'statusbar_text': '#657b83',
-                'button_bg': '#eee8d5',
-                'button_text': '#657b83',
-                'button_hover': '#e8e2d4',
-                'border': '#d3cbb7'
-            },
-            'Solarized Dark': {
-                'name': 'Solarized Dark',
-                'background': '#002b36',
-                'text': '#839496',
-                'selection_bg': '#268bd2',
-                'selection_text': '#002b36',
-                'menubar_bg': '#073642',
-                'menubar_text': '#839496',
-                'toolbar_bg': '#0a3c47',
-                'statusbar_bg': '#073642',
-                'statusbar_text': '#839496',
-                'button_bg': '#073642',
-                'button_text': '#839496',
-                'button_hover': '#0c4956',
-                'border': '#586e75'
-            },
-            'High Contrast': {
-                'name': 'High Contrast',
-                'background': '#000000',
-                'text': '#ffffff',
-                'selection_bg': '#ffff00',
-                'selection_text': '#000000',
-                'menubar_bg': '#000000',
-                'menubar_text': '#ffffff',
-                'toolbar_bg': '#000000',
-                'statusbar_bg': '#000000',
-                'statusbar_text': '#ffffff',
-                'button_bg': '#333333',
-                'button_text': '#ffffff',
-                'button_hover': '#555555',
-                'border': '#ffffff'
-            },
-            'Monokai': {
-                'name': 'Monokai',
-                'background': '#272822',
-                'text': '#f8f8f2',
-                'selection_bg': '#49483e',
-                'selection_text': '#f8f8f2',
-                'menubar_bg': '#3e3d32',
-                'menubar_text': '#f8f8f2',
-                'toolbar_bg': '#414339',
-                'statusbar_bg': '#3e3d32',
-                'statusbar_text': '#f8f8f2',
-                'button_bg': '#49483e',
-                'button_text': '#f8f8f2',
-                'button_hover': '#5a594d',
-                'border': '#75715e'
-            },
-            'GitHub Dark': {
-                'name': 'GitHub Dark',
-                'background': '#0d1117',
-                'text': '#c9d1d9',
-                'selection_bg': '#388bfd',
-                'selection_text': '#ffffff',
-                'menubar_bg': '#161b22',
-                'menubar_text': '#c9d1d9',
-                'toolbar_bg': '#21262d',
-                'statusbar_bg': '#161b22',
-                'statusbar_text': '#c9d1d9',
-                'button_bg': '#21262d',
-                'button_text': '#c9d1d9',
-                'button_hover': '#30363d',
-                'border': '#30363d'
-            }
-        }
-        self.current_theme = 'Default Light'
 
-    def get_theme_names(self):
-        return list(self.themes.keys())
+# Migrate old display-name keys (stored in config files before this migration)
+# to ThemeManager internal registry keys.
+LEGACY_NAME_MAP: dict[str, str] = {
+    "Default Light":   "light",
+    "Warm Light":      "warm_light",
+    "Dark":            "dark",
+    "Solarized Light": "solarized_light",
+    "Solarized Dark":  "solarized_dark",
+    "High Contrast":   "high_contrast",
+    "Monokai":         "monokai",
+    "GitHub Dark":     "github_dark",
+}
 
-    def get_theme(self, theme_name):
-        return self.themes.get(theme_name, self.themes['Default Light'])
 
-    def is_dark_theme(self, theme_name=None):
-        if theme_name is None:
-            theme_name = self.current_theme
-        dark_themes = ['Dark', 'Solarized Dark', 'High Contrast', 'Monokai', 'GitHub Dark']
-        return theme_name in dark_themes
+def _register_atw_themes() -> None:
+    """Register Audio Tag Writer-specific themes into the global ThemeRegistry."""
+    registry = get_theme_registry()
 
-    def generate_stylesheet(self, theme_name):
-        """Generate QSS stylesheet for the given theme."""
-        theme = self.get_theme(theme_name)
+    registry.register_theme(Theme(
+        name="warm_light",
+        display_name="Warm Light",
+        content_colors=ThemeColors(
+            heading_color="#504741",
+            body_text_color="#504741",
+            background_color="#eee9e0",
+            link_color="#6699cc",
+            blockquote_color="#7a7068",
+            code_bg_color="#e6e1d7",
+            border_color="#b4aa9a",
+        ),
+        ui_palette=UIPalette(
+            window_color="#eee9e0",
+            window_text_color="#504741",
+            base_color="#f0ebe2",
+            alternate_base_color="#e6e1d7",
+            text_color="#504741",
+            button_color="#e6e1d7",
+            button_text_color="#504741",
+            highlight_color="#6699cc",
+            highlighted_text_color="#ffffff",
+            secondary_highlight_color="#cc6666",
+        ),
+        description="Warm neutral light theme",
+        is_built_in=False,
+        category=ThemeCategory.CUSTOM,
+    ))
 
-        return f"""
-        QMainWindow {{
-            background-color: {theme['background']};
-            color: {theme['text']};
-        }}
+    registry.register_theme(Theme(
+        name="high_contrast",
+        display_name="High Contrast",
+        content_colors=ThemeColors(
+            heading_color="#ffffff",
+            body_text_color="#ffffff",
+            background_color="#000000",
+            link_color="#ffff00",
+            blockquote_color="#cccccc",
+            code_bg_color="#1a1a1a",
+            border_color="#ffffff",
+        ),
+        ui_palette=UIPalette(
+            window_color="#000000",
+            window_text_color="#ffffff",
+            base_color="#000000",
+            alternate_base_color="#1a1a1a",
+            text_color="#ffffff",
+            button_color="#333333",
+            button_text_color="#ffffff",
+            highlight_color="#ffff00",
+            highlighted_text_color="#000000",
+            secondary_highlight_color="#ff8800",
+        ),
+        description="High contrast theme for accessibility",
+        is_built_in=False,
+        category=ThemeCategory.CUSTOM,
+    ))
 
-        QTextEdit, QPlainTextEdit {{
-            background-color: {theme['background']};
-            color: {theme['text']};
-            selection-background-color: {theme['selection_bg']};
-            selection-color: {theme['selection_text']};
-            border: 1px solid {theme['border']};
-        }}
+    registry.register_theme(Theme(
+        name="monokai",
+        display_name="Monokai",
+        content_colors=ThemeColors(
+            heading_color="#a6e22e",
+            body_text_color="#f8f8f2",
+            background_color="#272822",
+            link_color="#66d9e8",
+            blockquote_color="#75715e",
+            code_bg_color="#3e3d32",
+            border_color="#75715e",
+        ),
+        ui_palette=UIPalette(
+            window_color="#272822",
+            window_text_color="#f8f8f2",
+            base_color="#1e1f29",
+            alternate_base_color="#49483e",
+            text_color="#f8f8f2",
+            button_color="#49483e",
+            button_text_color="#f8f8f2",
+            highlight_color="#a6e22e",
+            highlighted_text_color="#272822",
+            secondary_highlight_color="#fd971f",
+        ),
+        description="Classic Monokai dark theme",
+        is_built_in=False,
+        category=ThemeCategory.POPULAR,
+    ))
 
-        QMenuBar {{
-            background-color: {theme['menubar_bg']};
-            color: {theme['menubar_text']};
-            border-bottom: 1px solid {theme['border']};
-        }}
+    registry.register_theme(Theme(
+        name="github_dark",
+        display_name="GitHub Dark",
+        content_colors=ThemeColors(
+            heading_color="#58a6ff",
+            body_text_color="#c9d1d9",
+            background_color="#0d1117",
+            link_color="#58a6ff",
+            blockquote_color="#8b949e",
+            code_bg_color="#161b22",
+            border_color="#30363d",
+        ),
+        ui_palette=UIPalette(
+            window_color="#161b22",
+            window_text_color="#c9d1d9",
+            base_color="#0d1117",
+            alternate_base_color="#21262d",
+            text_color="#c9d1d9",
+            button_color="#21262d",
+            button_text_color="#c9d1d9",
+            highlight_color="#388bfd",
+            highlighted_text_color="#ffffff",
+            secondary_highlight_color="#d29922",
+        ),
+        description="GitHub Dark theme",
+        is_built_in=False,
+        category=ThemeCategory.POPULAR,
+    ))
 
-        QMenuBar::item {{
-            background-color: transparent;
-            padding: 4px 8px;
-        }}
 
-        QMenuBar::item:selected {{
-            background-color: {theme['selection_bg']};
-            color: {theme['selection_text']};
-        }}
-
-        QMenu {{
-            background-color: {theme['menubar_bg']};
-            color: {theme['menubar_text']};
-            border: 1px solid {theme['border']};
-        }}
-
-        QMenu::item {{
-            background-color: transparent;
-            padding: 6px 12px;
-        }}
-
-        QMenu::item:selected {{
-            background-color: {theme['selection_bg']};
-            color: {theme['selection_text']};
-        }}
-
-        QMenu::separator {{
-            height: 1px;
-            background-color: {theme['border']};
-            margin: 2px 0;
-        }}
-
-        QToolBar {{
-            background-color: {theme['toolbar_bg']};
-            color: {theme['text']};
-            border: 1px solid {theme['border']};
-            spacing: 2px;
-        }}
-
-        QToolBar::separator {{
-            background-color: {theme['border']};
-            width: 1px;
-            margin: 2px;
-        }}
-
-        QStatusBar {{
-            background-color: {theme['statusbar_bg']};
-            color: {theme['statusbar_text']};
-            border-top: 1px solid {theme['border']};
-        }}
-
-        QPushButton {{
-            background-color: {theme['button_bg']};
-            color: {theme['button_text']};
-            border: 1px solid {theme['border']};
-            border-radius: 3px;
-            padding: 6px 12px;
-            min-width: 80px;
-        }}
-
-        QPushButton:hover {{
-            background-color: {theme['button_hover']};
-        }}
-
-        QPushButton:pressed {{
-            background-color: {theme['selection_bg']};
-            color: {theme['selection_text']};
-        }}
-
-        QPushButton:disabled {{
-            background-color: {theme['border']};
-            color: {theme['statusbar_text']};
-        }}
-
-        QLabel {{
-            background-color: transparent;
-            color: {theme['text']};
-        }}
-
-        QLineEdit {{
-            background-color: {theme['background']};
-            color: {theme['text']};
-            border: 1px solid {theme['border']};
-            border-radius: 3px;
-            padding: 4px;
-            selection-background-color: {theme['selection_bg']};
-            selection-color: {theme['selection_text']};
-        }}
-
-        QLineEdit:focus {{
-            border: 2px solid {theme['selection_bg']};
-        }}
-
-        QTextEdit:focus, QPlainTextEdit:focus {{
-            border: 2px solid {theme['selection_bg']};
-        }}
-
-        QWidget {{
-            background-color: {theme['background']};
-            color: {theme['text']};
-        }}
-
-        QScrollArea {{
-            background-color: {theme['background']};
-            color: {theme['text']};
-            border: 1px solid {theme['border']};
-        }}
-
-        QScrollArea > QWidget > QWidget {{
-            background-color: {theme['background']};
-        }}
-
-        QFrame {{
-            background-color: {theme['background']};
-            color: {theme['text']};
-        }}
-
-        QDialog {{
-            background-color: {theme['background']};
-            color: {theme['text']};
-        }}
-
-        QSplitter::handle {{
-            background-color: {theme['border']};
-            width: 2px;
-        }}
-
-        QSplitter::handle:hover {{
-            background-color: {theme['selection_bg']};
-        }}
-
-        QComboBox {{
-            background-color: {theme['button_bg']};
-            color: {theme['button_text']};
-            border: 1px solid {theme['border']};
-            border-radius: 3px;
-            padding: 4px 8px;
-            min-width: 100px;
-        }}
-
-        QComboBox:hover {{
-            background-color: {theme['button_hover']};
-        }}
-
-        QComboBox::drop-down {{
-            border: none;
-            width: 20px;
-        }}
-
-        QComboBox::down-arrow {{
-            border-left: 5px solid transparent;
-            border-right: 5px solid transparent;
-            border-top: 5px solid {theme['text']};
-        }}
-
-        QComboBox QAbstractItemView {{
-            background-color: {theme['menubar_bg']};
-            color: {theme['menubar_text']};
-            selection-background-color: {theme['selection_bg']};
-            selection-color: {theme['selection_text']};
-            border: 1px solid {theme['border']};
-        }}
-
-        QTableWidget {{
-            background-color: {theme['background']};
-            color: {theme['text']};
-            selection-background-color: {theme['selection_bg']};
-            selection-color: {theme['selection_text']};
-            border: 1px solid {theme['border']};
-        }}
-
-        QTableWidget::item {{
-            border-bottom: 1px solid {theme['border']};
-            padding: 4px;
-        }}
-
-        QHeaderView::section {{
-            background-color: {theme['toolbar_bg']};
-            color: {theme['text']};
-            border: 1px solid {theme['border']};
-            padding: 4px;
-        }}
-
-        QScrollBar:vertical {{
-            background-color: {theme['background']};
-            width: 16px;
-            border: 1px solid {theme['border']};
-        }}
-
-        QScrollBar::handle:vertical {{
-            background-color: {theme['button_bg']};
-            border: 1px solid {theme['selection_bg']};
-            border-radius: 3px;
-            min-height: 20px;
-        }}
-
-        QScrollBar::handle:vertical:hover {{
-            background-color: {theme['selection_bg']};
-        }}
-
-        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
-            background-color: {theme['toolbar_bg']};
-            border: 1px solid {theme['border']};
-            height: 16px;
-            subcontrol-origin: margin;
-        }}
-
-        QScrollBar::add-line:vertical:hover, QScrollBar::sub-line:vertical:hover {{
-            background-color: {theme['button_hover']};
-        }}
-
-        QScrollBar::up-arrow:vertical {{
-            border-left: 4px solid transparent;
-            border-right: 4px solid transparent;
-            border-bottom: 6px solid {theme['text']};
-        }}
-
-        QScrollBar::down-arrow:vertical {{
-            border-left: 4px solid transparent;
-            border-right: 4px solid transparent;
-            border-top: 6px solid {theme['text']};
-        }}
-
-        QScrollBar:horizontal {{
-            background-color: {theme['background']};
-            height: 16px;
-            border: 1px solid {theme['border']};
-        }}
-
-        QScrollBar::handle:horizontal {{
-            background-color: {theme['button_bg']};
-            border: 1px solid {theme['selection_bg']};
-            border-radius: 3px;
-            min-width: 20px;
-        }}
-
-        QScrollBar::handle:horizontal:hover {{
-            background-color: {theme['selection_bg']};
-        }}
-
-        QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
-            background-color: {theme['toolbar_bg']};
-            border: 1px solid {theme['border']};
-            width: 16px;
-            subcontrol-origin: margin;
-        }}
-
-        QScrollBar::add-line:horizontal:hover, QScrollBar::sub-line:horizontal:hover {{
-            background-color: {theme['button_hover']};
-        }}
-
-        QScrollBar::left-arrow:horizontal {{
-            border-top: 4px solid transparent;
-            border-bottom: 4px solid transparent;
-            border-right: 6px solid {theme['text']};
-        }}
-
-        QScrollBar::right-arrow:horizontal {{
-            border-top: 4px solid transparent;
-            border-bottom: 4px solid transparent;
-            border-left: 6px solid {theme['text']};
-        }}
-
-        QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,
-        QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
-            background: transparent;
-        }}
-        """
+_register_atw_themes()

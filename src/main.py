@@ -31,7 +31,7 @@ from audio_tag_writer.file_ops import FileOpsMixin
 from audio_tag_writer.navigation import NavigationMixin
 from audio_tag_writer.window import WindowMixin
 from audio_tag_writer.menu import MenuMixin
-from audio_tag_writer.theme import ThemeManager
+from audio_tag_writer.theme import DEFAULT_THEME, is_dark_theme
 from audio_tag_writer.theme_mixin import ThemeMixin
 from audio_tag_writer.help import HelpMixin
 
@@ -59,9 +59,8 @@ class MainWindow(NavigationMixin, FileOpsMixin, MenuMixin, ThemeMixin, HelpMixin
         self.metadata_manager = MetadataManager()
 
         # Theme / zoom state — must be set before _setup_ui calls create_menu_bar
-        self.theme_manager = ThemeManager()
         self.current_theme = config.current_theme
-        self.dark_mode = config.dark_mode
+        self.dark_mode = is_dark_theme(self.current_theme)
         self.ui_scale_factor = config.ui_zoom_factor
         self._zoom_css = ''
 
@@ -69,11 +68,9 @@ class MainWindow(NavigationMixin, FileOpsMixin, MenuMixin, ThemeMixin, HelpMixin
         QApplication.instance().installEventFilter(self)
         self.restore_window_geometry()
 
-        # Apply saved theme (and zoom if non-default)
+        self.apply_theme()
         if self.ui_scale_factor != 1.0:
             self._apply_ui_zoom()
-        else:
-            self.apply_comprehensive_theme()
 
         self._restore_last_file()
         logger.info("Main window initialised (Phase 5)")

@@ -13,6 +13,17 @@ from .constants import (APP_VERSION, APP_TIMESTAMP,
 
 logger = logging.getLogger(__name__)
 
+_THEME_MIGRATION: dict[str, str] = {
+    "Default Light":   "light",
+    "Warm Light":      "warm_light",
+    "Dark":            "dark",
+    "Solarized Light": "solarized_light",
+    "Solarized Dark":  "solarized_dark",
+    "High Contrast":   "high_contrast",
+    "Monokai":         "monokai",
+    "GitHub Dark":     "github_dark",
+}
+
 if sys.platform.startswith('win'):
     import msvcrt
 else:
@@ -96,7 +107,7 @@ class Config:
 
         self.dark_mode = False
         self.ui_zoom_factor = 1.0
-        self.current_theme = 'Default Light'
+        self.current_theme = 'light'
         self.window_geometry = None
         self.window_maximized = False
 
@@ -206,7 +217,8 @@ class Config:
             ]
             self.dark_mode = data.get('dark_mode', False)
             self.ui_zoom_factor = data.get('ui_zoom_factor', 1.0)
-            self.current_theme = data.get('current_theme', 'Default Light')
+            raw_theme = data.get('current_theme', 'light')
+            self.current_theme = _THEME_MIGRATION.get(raw_theme, raw_theme)
             self.window_geometry = data.get('window_geometry')
             self.window_maximized = data.get('window_maximized', False)
             self.auto_check_updates = data.get('auto_check_updates', False)

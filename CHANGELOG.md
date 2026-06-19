@@ -5,6 +5,29 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.10] - Thu 19 Jun 2026 CDT
+
+### Changed
+- **Migrate theming to shared ThemeManager module** — replaced the local `ThemeManager` class
+  and its CSS `generate_stylesheet()` approach with the shared `~/Projects/ThemeManager` module:
+  - All ten themes (six built-in + four ATW-specific) are now registered in the global `ThemeRegistry`
+    and applied as `QPalette` via `get_fusion_palette()` rather than a monolithic QSS string
+  - `theme.py` rewritten as a ThemeManager wrapper; registers Warm Light, High Contrast, Monokai,
+    and GitHub Dark as custom themes; exports `DEFAULT_THEME`, `is_dark_theme()`, `get_fusion_palette()`,
+    `get_theme_registry()`
+  - `theme_mixin.py` rewritten: `apply_theme()` calls `app.setPalette(get_fusion_palette(...))`;
+    `on_select_theme()` uses the new `ThemeDialog` with palette swatch preview;
+    zoom CSS stylesheet coexists with QPalette (zoom CSS sets only font sizes/padding, not colors)
+  - `config.py` updated: `_THEME_MIGRATION` dict converts old display-name keys (e.g., "Default
+    Light", "GitHub Dark") stored in `~/.audio_tag_writer_config.json` to ThemeManager internal
+    registry keys (e.g., "light", "github_dark") on first load — no manual config edit needed
+  - `widgets/theme_dialog.py` added: `ThemeDialog` shows themes grouped by category (Built-in,
+    Popular, Custom) with a live colour-swatch preview; replaces the old inline `QListWidget` picker
+  - `main.py` updated: removed `ThemeManager()` instance; `dark_mode` now derived from
+    `is_dark_theme(self.current_theme)` rather than `config.dark_mode`
+
+---
+
 ## [0.7.9] - Sat 06 Jun 2026 CDT
 
 ### Added
