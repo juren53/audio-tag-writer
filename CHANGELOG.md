@@ -5,6 +5,22 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.12] - Thu 19 Jun 2026 15:00 CDT
+
+### Changed
+- **Migrate to Icon Manager Module (IMM)** — replaced the local `platform.py` icon handling
+  with the shared `~/Projects/Icon_Manager_Module`:
+  - `IconLoader` imported at module level so `_init_win32()` fires before `QApplication` is created
+  - Full `resources/icons/` set generated from `assets/ICON_atw_source.png` (`app.ico`, `app.icns`,
+    `app.png`, `app_16x16.png` through `app_256x256.png`)
+  - `app.setWindowIcon()` and `window.setWindowIcon()` now use `_app_icons.app_icon()`
+  - `set_taskbar_icon(window, APP_USER_MODEL_ID)` called after `window.show()` for correct
+    per-window AUMID and `WM_SETICON` assignment
+  - `platform.py` retired to a stub; `set_app_user_model_id()` and `set_windows_taskbar_icon()`
+    removed from call sites
+
+---
+
 ## [0.7.11] - Thu 19 Jun 2026 14:00 CDT
 
 ### Fixed

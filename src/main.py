@@ -3,6 +3,7 @@ Audio Tag Writer - Main application entry point.
 """
 
 import os
+import pathlib
 import sys
 import logging
 
@@ -14,6 +15,20 @@ logger = logging.getLogger(__name__)
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# IMM setup at module level so _init_win32() fires before QApplication is created.
+_IMM_PATH = os.path.expanduser("~/Projects/Icon_Manager_Module")
+if os.path.isdir(_IMM_PATH) and _IMM_PATH not in sys.path:
+    sys.path.insert(0, _IMM_PATH)
+
+_app_icons = None
+try:
+    from icon_loader import IconLoader  # side-effect: _init_win32() on Windows
+    _app_icons = IconLoader(
+        base_path=pathlib.Path(__file__).resolve().parent.parent / "resources" / "icons"
+    )
+except Exception:
+    pass
+
 from PyQt6.QtWidgets import (
     QMainWindow, QApplication, QWidget, QVBoxLayout,
     QLabel, QSplitter, QStatusBar, QMessageBox,
@@ -21,9 +36,8 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
 
-from audio_tag_writer.constants import APP_NAME, APP_VERSION, APP_TIMESTAMP, APP_ORGANIZATION, AUDIO_EXTENSIONS
+from audio_tag_writer.constants import APP_NAME, APP_VERSION, APP_TIMESTAMP, APP_ORGANIZATION, APP_USER_MODEL_ID, AUDIO_EXTENSIONS
 from audio_tag_writer.config import config, SingleInstanceChecker
-from audio_tag_writer.platform import set_app_user_model_id, set_windows_taskbar_icon
 from audio_tag_writer.mutagen_utils import check_mutagen_available, AudioFileError
 from audio_tag_writer.metadata import MetadataManager
 from audio_tag_writer.widgets import AudioPanel, MetadataPanel
@@ -36,14 +50,10 @@ from audio_tag_writer.theme_mixin import ThemeMixin
 from audio_tag_writer.help import HelpMixin
 
 
-def _get_icon_path():
-    base = (sys._MEIPASS if getattr(sys, 'frozen', False)
-            else os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    for name in ("ICON_atw.ico", "ICON_atw.png"):
-        candidate = os.path.join(base, "assets", name)
-        if os.path.exists(candidate):
-            return candidate
-    return None
+def get_app_icon() -> QIcon:
+    if _app_icons is not None:
+        return _app_icons.app_icon()
+    return QIcon()
 
 
 class MainWindow(NavigationMixin, FileOpsMixin, MenuMixin, ThemeMixin, HelpMixin, WindowMixin, QMainWindow):
@@ -89,9 +99,7 @@ class MainWindow(NavigationMixin, FileOpsMixin, MenuMixin, ThemeMixin, HelpMixin
             Qt.WindowType.WindowCloseButtonHint
         )
 
-        icon_path = _get_icon_path()
-        if icon_path:
-            self.setWindowIcon(QIcon(icon_path))
+        self.setWindowIcon(get_app_icon())
 
         self.create_menu_bar()
         self.create_toolbar()
@@ -146,8 +154,6 @@ class MainWindow(NavigationMixin, FileOpsMixin, MenuMixin, ThemeMixin, HelpMixin
 # ------------------------------------------------------------------
 
 def main():
-    set_app_user_model_id()
-
     instance_checker = SingleInstanceChecker("audio-tag-writer")
     if instance_checker.is_already_running():
         app = QApplication(sys.argv)
@@ -167,9 +173,7 @@ def main():
     app.setStyle("Fusion")
     app.setQuitOnLastWindowClosed(True)
 
-    icon_path = _get_icon_path()
-    if icon_path:
-        app.setWindowIcon(QIcon(icon_path))
+    app.setWindowIcon(get_app_icon())
 
     try:
         check_mutagen_available()
@@ -177,8 +181,6 @@ def main():
     except AudioFileError as e:
         QMessageBox.critical(None, "Missing Dependency", str(e))
         return 1
-
-    set_windows_taskbar_icon()
 
     # Handle command-line file argument
     cli_file = None
@@ -191,11 +193,8 @@ def main():
     window = MainWindow()
     window.show()
 
-    if sys.platform.startswith('win'):
-        try:
-            set_windows_taskbar_icon(int(window.winId()))
-        except Exception as e:
-            logger.error(f"Error setting taskbar icon: {e}")
+    if _app_icons is not None:
+        _app_icons.set_taskbar_icon(window, APP_USER_MODEL_ID)
 
     if cli_file:
         window.load_file(cli_file)
