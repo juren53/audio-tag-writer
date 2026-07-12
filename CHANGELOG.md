@@ -5,6 +5,20 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.13] - Sun 12 Jul 2026 13:00 CDT
+
+### Changed
+- **Replace file-lock `SingleInstanceChecker` with `SingleInstanceGuard`** — vendored
+  `single_instance_guard.py` from `~/Projects/single-instance-guard` (its own CLAUDE.md
+  prescribes copy-paste consumption rather than `sys.path` insertion, unlike the Icon
+  Manager Module and ThemeManager). Uses `QLocalServer`/`QLocalSocket` instead of a
+  temp-directory lock file, so launching a second instance now silently raises the
+  existing window instead of showing an "Audio Tag Writer Already Running" dialog.
+  Removed the now-dead `SingleInstanceChecker` class and its `msvcrt`/`fcntl` platform
+  imports from `config.py`.
+
+---
+
 ## [0.7.12b] - Sun 12 Jul 2026 11:41 CDT
 
 ### Fixed
@@ -681,6 +695,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v0.7.13** - Sun 12 Jul 2026: Replace file-lock `SingleInstanceChecker` with `SingleInstanceGuard` — `QLocalServer`/`QLocalSocket`-based single-instance lock; second launch silently raises the primary window instead of showing a dialog
 - **v0.7.12b** - Sun 12 Jul 2026: Fix `build_exe.ps1` failing on point-release versions — `version_tuple()` in `generate_version_info.py` now strips trailing non-digit characters (e.g. `"0.7.12a"` -> `12`) instead of raising `ValueError`
 - **v0.7.12a** - Sun 12 Jul 2026: Fix "Could not create a temporary directory!" on right-click/"Open with" launch (issue #6) — `runtime_tmpdir` changed from CWD-relative `'.'` to absolute `%LOCALAPPDATA%\audio-tag-writer\runtime`
 - **v0.7.12** - Thu 19 Jun 2026: Migrate to Icon Manager Module — replaced local `platform.py` icon handling with shared `IconManager`; `IconLoader` init before `QApplication`; per-window AUMID + `WM_SETICON` via `set_taskbar_icon()`; `platform.py` retired to stub
