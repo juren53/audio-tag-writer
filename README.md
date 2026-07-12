@@ -36,6 +36,8 @@ Windows 11 executable is available at:
 
 https://github.com/juren53/audio-tag-writer/releases
 
+**Latest release:** [v0.7.12b](https://github.com/juren53/audio-tag-writer/releases/tag/v0.7.12b) — fixes `build_exe.ps1` failing on point-release versions
+
 ```powershell
 git clone https://github.com/juren53/audio-tag-writer.git
 cd audio-tag-writer
