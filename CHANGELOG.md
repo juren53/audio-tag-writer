@@ -5,6 +5,18 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.12b] - Sun 12 Jul 2026 11:41 CDT
+
+### Fixed
+- **`build_exe.ps1` failed at the "Generating version_info.txt" step for point-release
+  versions** — `generate_version_info.py`'s `version_tuple()` assumed every dot-separated
+  segment of `APP_VERSION` was a plain integer, so a value like `"0.7.12a"` raised
+  `ValueError: invalid literal for int() with base 10: '12a'` and aborted the build before
+  PyInstaller ever ran. Now strips trailing non-digit characters from each segment before
+  parsing (e.g. `12a` -> `12`), so point-release suffixes no longer block building the exe.
+
+---
+
 ## [0.7.12a] - Sun 12 Jul 2026 10:34 CDT
 
 ### Fixed
@@ -669,6 +681,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v0.7.12b** - Sun 12 Jul 2026: Fix `build_exe.ps1` failing on point-release versions — `version_tuple()` in `generate_version_info.py` now strips trailing non-digit characters (e.g. `"0.7.12a"` -> `12`) instead of raising `ValueError`
 - **v0.7.12a** - Sun 12 Jul 2026: Fix "Could not create a temporary directory!" on right-click/"Open with" launch (issue #6) — `runtime_tmpdir` changed from CWD-relative `'.'` to absolute `%LOCALAPPDATA%\audio-tag-writer\runtime`
 - **v0.7.12** - Thu 19 Jun 2026: Migrate to Icon Manager Module — replaced local `platform.py` icon handling with shared `IconManager`; `IconLoader` init before `QApplication`; per-window AUMID + `WM_SETICON` via `set_taskbar_icon()`; `platform.py` retired to stub
 - **v0.7.11** - Thu 19 Jun 2026: Fix `APP_USER_MODEL_ID` to be version-free — changed from `"SynchroSoft.AudioTagWriter.ATW.0.7.10"` to `"SynchroSoft.ATW"` to fix taskbar pinning across updates
