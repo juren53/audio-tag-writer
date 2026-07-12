@@ -49,7 +49,14 @@ exe = EXE(
     strip=False,
     upx=True,
     upx_exclude=[],
-    runtime_tmpdir='.',     # extract next to exe; no temp-dir cleanup → no AV-lock error on exit
+    # A relative runtime_tmpdir (e.g. '.') is resolved against the CURRENT WORKING
+    # DIRECTORY at launch, not the exe's own folder. Explorer's "Open with" / right-click
+    # context-menu launch can set the CWD to the target file's directory (read-only media,
+    # a network share, a protected folder, etc.), which made extraction fail there with
+    # "Could not create a temporary directory!" (issue #6). %LOCALAPPDATA% is always
+    # writable per-user and independent of how/where the exe was launched from, and since
+    # it's not cleaned up, we still avoid the original AV-lock-on-delete error (v0.7.7).
+    runtime_tmpdir=r'%LOCALAPPDATA%\audio-tag-writer\runtime',
     console=False,           # no console window
     disable_windowed_traceback=False,
     argv_emulation=False,

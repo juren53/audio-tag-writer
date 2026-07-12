@@ -5,6 +5,21 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.12a] - Sun 12 Jul 2026 10:34 CDT
+
+### Fixed
+- **"Could not create a temporary directory!" when launching the .exe via right-click / "Open with"
+  (issue #6)** — the v0.7.7 fix set `runtime_tmpdir='.'` in the PyInstaller spec, but PyInstaller
+  resolves a relative `runtime_tmpdir` against the **current working directory at launch**, not the
+  executable's own folder. Launching via Explorer's right-click context menu on a file can start the
+  app with its CWD set to that file's directory — a read-only removable drive, network share, or
+  protected folder — causing the extraction directory creation to fail. Changed `runtime_tmpdir` to
+  the absolute, per-user path `%LOCALAPPDATA%\audio-tag-writer\runtime`, which is always writable and
+  independent of how or from where the exe is launched, while still avoiding the original v0.7.7
+  AV-lock-on-delete error since it's never cleaned up.
+
+---
+
 ## [0.7.12] - Thu 19 Jun 2026 15:00 CDT
 
 ### Changed
@@ -654,6 +669,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v0.7.12a** - Sun 12 Jul 2026: Fix "Could not create a temporary directory!" on right-click/"Open with" launch (issue #6) — `runtime_tmpdir` changed from CWD-relative `'.'` to absolute `%LOCALAPPDATA%\audio-tag-writer\runtime`
 - **v0.7.12** - Thu 19 Jun 2026: Migrate to Icon Manager Module — replaced local `platform.py` icon handling with shared `IconManager`; `IconLoader` init before `QApplication`; per-window AUMID + `WM_SETICON` via `set_taskbar_icon()`; `platform.py` retired to stub
 - **v0.7.11** - Thu 19 Jun 2026: Fix `APP_USER_MODEL_ID` to be version-free — changed from `"SynchroSoft.AudioTagWriter.ATW.0.7.10"` to `"SynchroSoft.ATW"` to fix taskbar pinning across updates
 - **v0.7.10** - Thu 19 Jun 2026: Migrate theming to shared ThemeManager module — QPalette-based theming via `ThemeRegistry`; `ThemeDialog` with colour-swatch preview; config migration for saved theme display names
