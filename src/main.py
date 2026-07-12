@@ -164,8 +164,17 @@ def main():
 
     app.setWindowIcon(get_app_icon())
 
+    # Handle command-line file argument
+    cli_file = None
+    if len(sys.argv) > 1:
+        candidate = sys.argv[1]
+        if (os.path.isfile(candidate)
+                and os.path.splitext(candidate)[1].lower() in AUDIO_EXTENSIONS):
+            cli_file = os.path.abspath(candidate)
+
     guard = SingleInstanceGuard(APP_USER_MODEL_ID)
-    if not guard.try_acquire():
+    payload = cli_file.encode("utf-8") if cli_file else b""
+    if not guard.try_acquire(payload):
         return 0
     app.aboutToQuit.connect(guard.release)
 
@@ -176,16 +185,8 @@ def main():
         QMessageBox.critical(None, "Missing Dependency", str(e))
         return 1
 
-    # Handle command-line file argument
-    cli_file = None
-    if len(sys.argv) > 1:
-        candidate = sys.argv[1]
-        if (os.path.isfile(candidate)
-                and os.path.splitext(candidate)[1].lower() in AUDIO_EXTENSIONS):
-            cli_file = os.path.abspath(candidate)
-
     window = MainWindow()
-    guard.connect_window(window)
+    guard.connect_window(window, on_payload=window.load_file)
     window.show()
 
     if _app_icons is not None:

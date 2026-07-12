@@ -5,6 +5,20 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.13a] - Sun 12 Jul 2026 14:04 CDT
+
+### Fixed
+- **Right-clicking a file and choosing "Open with" Audio Tag Writer while the app was
+  already running silently dropped the file** — `SingleInstanceGuard`'s raise protocol
+  only sent a bare `b"raise"` signal with no room for a file path, so the second launch
+  just raised the existing window without opening anything. Extended the protocol so
+  `try_acquire()` can send an optional payload (`b"raise\n" + path`) and `connect_window()`
+  accepts an `on_payload` callback; `main.py` now passes the CLI file argument through and
+  wires it to `window.load_file`, so the already-running instance opens the newly
+  requested file instead of ignoring it.
+
+---
+
 ## [0.7.13] - Sun 12 Jul 2026 13:00 CDT
 
 ### Changed
@@ -695,6 +709,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version History Summary
 
+- **v0.7.13a** - Sun 12 Jul 2026: Fix "Open with" on a second file silently doing nothing while the app is already running — `SingleInstanceGuard` raise protocol now carries an optional file-path payload, relayed to `window.load_file` on the primary instance
 - **v0.7.13** - Sun 12 Jul 2026: Replace file-lock `SingleInstanceChecker` with `SingleInstanceGuard` — `QLocalServer`/`QLocalSocket`-based single-instance lock; second launch silently raises the primary window instead of showing a dialog
 - **v0.7.12b** - Sun 12 Jul 2026: Fix `build_exe.ps1` failing on point-release versions — `version_tuple()` in `generate_version_info.py` now strips trailing non-digit characters (e.g. `"0.7.12a"` -> `12`) instead of raising `ValueError`
 - **v0.7.12a** - Sun 12 Jul 2026: Fix "Could not create a temporary directory!" on right-click/"Open with" launch (issue #6) — `runtime_tmpdir` changed from CWD-relative `'.'` to absolute `%LOCALAPPDATA%\audio-tag-writer\runtime`

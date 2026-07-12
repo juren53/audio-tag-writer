@@ -61,8 +61,13 @@ class SingleInstanceGuard:
         self._write_timeout_ms = write_timeout_ms
         self._server: QLocalServer | None = None
 
-    def try_acquire(self) -> bool:
+    def try_acquire(self, payload: bytes = b"") -> bool:
         """Attempt to become the primary instance.
+
+        Args:
+            payload: Optional extra bytes to send to the primary instance
+                alongside the raise signal (e.g. a file path from argv, so
+                the primary can open it). Must not contain a newline.
 
         Returns:
             True if this process should become the primary instance.
@@ -72,7 +77,8 @@ class SingleInstanceGuard:
         probe = QLocalSocket()
         probe.connectToServer(self._socket_name)
         if probe.waitForConnected(self._connect_timeout_ms):
-            probe.write(b"raise")
+            message = b"raise\n" + payload if payload else b"raise"
+            probe.write(message)
             probe.waitForBytesWritten(self._write_timeout_ms)
             probe.disconnectFromServer()
             return False
@@ -83,29 +89,38 @@ class SingleInstanceGuard:
         self._server.listen(self._socket_name)
         return True
 
-    def connect_window(self, window) -> None:
-        """Wire incoming connections from secondary launches to raise *window*."""
+    def connect_window(self, window, on_payload=None) -> None:
+        """Wire incoming connections from secondary launches to raise *window*.
+
+        Args:
+            on_payload: Optional callable invoked with the decoded payload
+                string when a secondary launch sends one (e.g. a file path).
+                Not called when a secondary launch sends no payload.
+        """
         if self._server is None:
             return
         self._server.newConnection.connect(
-            lambda: self._handle_connection(window)
+            lambda: self._handle_connection(window, on_payload)
         )
 
-    def _handle_connection(self, window) -> None:
+    def _handle_connection(self, window, on_payload) -> None:
         conn = self._server.nextPendingConnection()
         if conn is None:
             return
-        conn.readyRead.connect(lambda: self._on_data(conn, window))
+        conn.readyRead.connect(lambda: self._on_data(conn, window, on_payload))
 
-    def _on_data(self, conn, window) -> None:
+    def _on_data(self, conn, window, on_payload) -> None:
         data = bytes(conn.readAll())
-        if b"raise" in data:
+        if data.startswith(b"raise"):
             # Un-minimise, then bring to front
             state = window.windowState() & ~Qt.WindowState.WindowMinimized
             window.setWindowState(state)
             window.show()
             window.raise_()
             window.activateWindow()
+            _, _, payload = data.partition(b"\n")
+            if payload and on_payload is not None:
+                on_payload(payload.decode("utf-8"))
         conn.disconnectFromServer()
 
     def release(self) -> None:
