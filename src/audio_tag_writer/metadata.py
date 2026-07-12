@@ -250,12 +250,16 @@ class MetadataManager:
             tags.delall(frame_id)
 
     def _write_comm(self, tags, value: str):
-        """Write or delete the COMM frame (lang=eng, desc='')."""
-        key = 'COMM::eng'
+        """Write or delete the COMM frame (lang=eng, desc='').
+
+        Files can carry multiple COMM frames with differing lang/desc
+        (e.g. a leftover 'COMM:ID3v1 Comment:eng' from a prior tagger).
+        Clear all of them first so the edited value doesn't get shadowed
+        by a stale duplicate on the next read.
+        """
+        tags.delall('COMM')
         if value:
-            tags[key] = COMM(encoding=3, lang='eng', desc='', text=[value])
-        else:
-            tags.delall('COMM')
+            tags['COMM::eng'] = COMM(encoding=3, lang='eng', desc='', text=[value])
 
     def _write_ipls(self, tags, value: str):
         """
