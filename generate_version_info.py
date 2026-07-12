@@ -21,7 +21,7 @@ def read_version() -> str:
 
 
 def version_tuple(v: str) -> tuple:
-    parts = [int(x) for x in v.split('.')]
+    parts = [int(re.sub(r'[^0-9].*$', '', x) or 0) for x in v.split('.')]
     while len(parts) < 4:
         parts.append(0)
     return tuple(parts[:4])
