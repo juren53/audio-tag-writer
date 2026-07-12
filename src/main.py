@@ -37,7 +37,8 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QIcon
 
 from audio_tag_writer.constants import APP_NAME, APP_VERSION, APP_TIMESTAMP, APP_ORGANIZATION, APP_USER_MODEL_ID, AUDIO_EXTENSIONS
-from audio_tag_writer.config import config, SingleInstanceChecker
+from audio_tag_writer.config import config
+from audio_tag_writer.single_instance_guard import SingleInstanceGuard
 from audio_tag_writer.mutagen_utils import check_mutagen_available, AudioFileError
 from audio_tag_writer.metadata import MetadataManager
 from audio_tag_writer.widgets import AudioPanel, MetadataPanel
@@ -154,18 +155,6 @@ class MainWindow(NavigationMixin, FileOpsMixin, MenuMixin, ThemeMixin, HelpMixin
 # ------------------------------------------------------------------
 
 def main():
-    instance_checker = SingleInstanceChecker("audio-tag-writer")
-    if instance_checker.is_already_running():
-        app = QApplication(sys.argv)
-        QMessageBox.warning(
-            None,
-            "Audio Tag Writer Already Running",
-            "Another instance of Audio Tag Writer is already running.\n\n"
-            "Please use the existing instance or close it first.",
-            QMessageBox.StandardButton.Ok,
-        )
-        return 1
-
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     app.setOrganizationName(APP_ORGANIZATION)
@@ -174,6 +163,11 @@ def main():
     app.setQuitOnLastWindowClosed(True)
 
     app.setWindowIcon(get_app_icon())
+
+    guard = SingleInstanceGuard(APP_USER_MODEL_ID)
+    if not guard.try_acquire():
+        return 0
+    app.aboutToQuit.connect(guard.release)
 
     try:
         check_mutagen_available()
@@ -191,6 +185,7 @@ def main():
             cli_file = os.path.abspath(candidate)
 
     window = MainWindow()
+    guard.connect_window(window)
     window.show()
 
     if _app_icons is not None:
@@ -200,15 +195,10 @@ def main():
         window.load_file(cli_file)
 
     try:
-        exit_code = app.exec()
-        instance_checker.release()
-        return exit_code
+        return app.exec()
     except KeyboardInterrupt:
-        instance_checker.release()
         app.quit()
         return 0
-    finally:
-        instance_checker.release()
 
 
 if __name__ == "__main__":

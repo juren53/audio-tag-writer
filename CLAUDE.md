@@ -89,6 +89,7 @@ constants → config → mutagen_utils → metadata → audio_utils/file_utils �
 | `theme.py` | ThemeManager integration |
 | `theme_mixin.py` | ThemeMixin — apply_theme, dark mode |
 | `platform.py` | Windows AppUserModelID, taskbar icon stub |
+| `single_instance_guard.py` | SingleInstanceGuard — `QLocalServer`/`QLocalSocket` single-instance lock; second launch silently raises the primary window (vendored from `~/Projects/single-instance-guard`) |
 | `widgets/metadata_panel.py` | MetadataPanel — dynamic field form driven by active mode |
 | `widgets/audio_panel.py` | AudioPanel — file info and waveform display |
 | `widgets/manage_modes_dialog.py` | Dialog for customizing mode field sets |
@@ -107,9 +108,10 @@ Modes determine which ID3 fields appear in the metadata panel. Defined in `const
 Auto-detection: the first mode whose discriminating frame is non-empty and present in the file wins. `TRCK` was chosen over `TPE1` for Music because HSTL archival files carry `TPE1 = "Harry S. Truman Library"`, which caused false Music matches.
 
 ### Shared Modules (external)
-- **Icon Manager Module** (`~/Projects/Icon_Manager_Module`) — icon loading, Windows taskbar AUMID
-- **ThemeManager** (`~/Projects/ThemeManager`) — built-in themes
-- **pyqt-app-info** (`~/Projects/pyqt-app-info`) — About dialog
+- **Icon Manager Module** (`~/Projects/Icon_Manager_Module`) — icon loading, Windows taskbar AUMID; referenced via `sys.path` insertion, not vendored
+- **ThemeManager** (`~/Projects/ThemeManager`) — built-in themes; referenced via `sys.path` insertion, not vendored
+- **pyqt-app-info** (`~/Projects/pyqt-app-info`) — About dialog; referenced via `sys.path` insertion, not vendored
+- **single-instance-guard** (`~/Projects/single-instance-guard`) — source of `single_instance_guard.py`; this one is **vendored** (copied into `src/audio_tag_writer/`) per its own CLAUDE.md, which prescribes copy-paste consumption rather than `sys.path` insertion. Re-copy the file from the source repo if it's updated upstream.
 
 ## Directory Structure
 
@@ -132,6 +134,7 @@ audio-tag-writer/
 │       ├── theme.py                   # ThemeManager integration
 │       ├── theme_mixin.py             # ThemeMixin
 │       ├── platform.py                # Windows taskbar stub
+│       ├── single_instance_guard.py   # SingleInstanceGuard (vendored)
 │       └── widgets/                   # MetadataPanel, AudioPanel, dialogs
 ├── tests/                             # pytest test suite
 ├── assets/                            # Icons, desktop file

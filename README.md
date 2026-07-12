@@ -150,7 +150,7 @@ audio-tag-writer/
 │   ├── main.py                      # Entry point; MainWindow
 │   └── audio_tag_writer/
 │       ├── constants.py             # App metadata, DEFAULT_MODES, AUDIO_EXTENSIONS
-│       ├── config.py                # Config singleton, SingleInstanceChecker
+│       ├── config.py                # Config singleton
 │       ├── metadata.py              # MetadataManager — ID3 read/write, JSON export/import
 │       ├── audio_utils.py           # Stream info (duration, bitrate, sample rate, …)
 │       ├── file_utils.py            # Directory scan for audio files
@@ -160,6 +160,7 @@ audio-tag-writer/
 │       ├── menu.py                  # MenuMixin — menu bar and toolbar
 │       ├── window.py                # WindowMixin — key events, geometry, close
 │       ├── platform.py              # Windows taskbar integration
+│       ├── single_instance_guard.py # SingleInstanceGuard — QLocalServer/QLocalSocket single-instance lock
 │       └── widgets/
 │           ├── metadata_panel.py    # Dynamic ID3 form
 │           └── audio_panel.py       # Album art + technical info panel
