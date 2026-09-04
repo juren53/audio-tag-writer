@@ -36,7 +36,7 @@ Windows 11 executable is available at:
 
 https://github.com/juren53/audio-tag-writer/releases
 
-**Latest release:** [v0.7.13a](https://github.com/juren53/audio-tag-writer/releases/tag/v0.7.13a) — fixes "Open with" silently dropping the file when the app is already running
+**Latest release:** [v0.7.13b](https://github.com/juren53/audio-tag-writer/releases/tag/v0.7.13b) — Linux System Menu integration reworked for LMDE / Cinnamon; adds `install-desktop.sh`
 
 ```powershell
 git clone https://github.com/juren53/audio-tag-writer.git
@@ -59,6 +59,16 @@ You can open a file directly from the command line:
 ```bash
 ./run.sh path/to/recording.mp3
 ```
+
+To add Audio Tag Writer to the desktop's System Menu (and enable right-click "Open With"
+for audio files), run:
+
+```bash
+./install-desktop.sh
+```
+
+This installs a user-level `.desktop` entry to `~/.local/share/applications/`. Tested on
+LMDE / Cinnamon. Use `./install-desktop.sh --uninstall` to remove it.
 
 ## Supported Formats
 
@@ -170,6 +180,7 @@ audio-tag-writer/
 ├── build_exe.ps1                    # Build script — generates version info then runs PyInstaller
 ├── run.sh                           # Bash launcher (Linux/macOS)
 ├── run.ps1                          # PowerShell launcher (Windows)
+├── install-desktop.sh               # Installs the Linux System Menu entry (assets/ATW.desktop)
 ├── requirements.txt
 └── CHANGELOG.md
 ```

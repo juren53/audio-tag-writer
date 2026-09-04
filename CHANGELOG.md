@@ -5,6 +5,22 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.13b] - Thu 03 Sep 2026 21:19 CDT
+
+### Changed
+- **Linux System Menu integration reworked for LMDE / Cinnamon** — `assets/ATW.desktop`
+  now uses an absolute `Icon=` path (`resources/icons/app_256x256.png`) instead of the
+  name-based `Icon=atw`, which never resolved on Cinnamon; `Exec=` gains `%f` so the
+  menu entry accepts a file argument; `Name` is `Audio Tag Writer`; `Categories` is now
+  freedesktop-valid (`AudioVideo;Audio;Utility;`).
+
+### Added
+- **`install-desktop.sh`** — user-level installer that rewrites the checkout path into
+  `assets/ATW.desktop`, installs it to `~/.local/share/applications/atw.desktop`, and
+  refreshes the desktop/icon caches. `--uninstall` removes it.
+
+---
+
 ## [0.7.13a] - Sun 12 Jul 2026 14:04 CDT
 
 ### Fixed
