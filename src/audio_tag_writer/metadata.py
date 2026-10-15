@@ -12,6 +12,7 @@ from mutagen.id3 import (
     ID3, ID3NoHeaderError,
     TIT1, TIT2, TIT3, TALB, TPE1, TPE2, TCON, TCOM, TRCK, TDRC, TPUB, TCOP,
     TOFN, TRDA, TXXX, COMM, IPLS, TEXT, TYER, TORY, TDAT, APIC,
+    TSRC, WOAS, WXXX,
 )
 
 from .config import config
@@ -147,6 +148,11 @@ class MetadataManager:
                     return '; '.join(parts)
                 return ''
 
+            # URL frames hold .url, not .text; WXXX is keyed 'WXXX:<desc>'
+            if frame_id in self._URL_FRAME_MAP:
+                frames = tags.getall(frame_id)
+                return frames[0].url if frames else ''
+
             raw = safe_get_text(tags, frame_id)
             # Fall back to v2.4 equivalent if mutagen converted the v2.3 frame.
             if not raw and frame_id in self._V23_TO_V24:
@@ -218,7 +224,11 @@ class MetadataManager:
         'TPUB': TPUB, 'TCOP': TCOP, 'TOFN': TOFN,
         'TRDA': TRDA, 'TEXT': TEXT,
         'TYER': TYER, 'TORY': TORY, 'TDAT': TDAT,
+        'TSRC': TSRC,
     }
+
+    # URL link frames (written by HAM as standard frames, not TXXX)
+    _URL_FRAME_MAP = {'WOAS': WOAS, 'WXXX': WXXX}
 
     def _write_frame(self, tags, frame_id: str, value: str):
         """Set or delete a single ID3 frame based on value."""
@@ -237,6 +247,15 @@ class MetadataManager:
                 tags[key] = TXXX(encoding=3, desc=desc, text=[value])
             else:
                 tags.delall(key)
+            return
+
+        if frame_id in self._URL_FRAME_MAP:
+            tags.delall(frame_id)
+            if value:
+                if frame_id == 'WXXX':
+                    tags.add(WXXX(encoding=3, desc='', url=value))
+                else:
+                    tags.add(WOAS(url=value))
             return
 
         frame_cls = self._SIMPLE_FRAME_MAP.get(frame_id)

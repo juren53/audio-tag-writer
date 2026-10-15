@@ -5,6 +5,29 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.14] - Thu 15 Oct 2026 01:58 CDT
+
+### Added
+- **Archival Recording mode reads HAM-tagged files** — four fields now fall back
+  to the standard ID3 frames that HAM (HSTL Audio Metadata framework) writes,
+  so they no longer show blank on HAM output:
+
+  | Field | ATW frame | Alias (HAM frame) |
+  |---|---|---|
+  | Collection | `TXXX:grouping` | `TIT1` |
+  | Source URL | `TXXX:WOAS` | `WOAS` |
+  | NAC URL | `TXXX:WXXX` | `WXXX` (desc `""`) |
+  | Institution ID | `TXXX:ISRC` | `TSRC` |
+
+  As with the existing aliases, saving writes the value to both frames, so an
+  edit in ATW keeps HAM's frame in sync.
+- **URL link frames (`WOAS`, `WXXX`) and `TSRC` are now readable/writable** —
+  URL frames store `.url` rather than `.text`, and Mutagen keys `WXXX` as
+  `WXXX:<desc>`, so they are read with `getall()` and rewritten with
+  `delall()` + `add()`.
+
+---
+
 ## [0.7.13b] - Thu 03 Sep 2026 21:19 CDT
 
 ### Changed

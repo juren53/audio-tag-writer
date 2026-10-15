@@ -3,8 +3,8 @@ Audio Tag Writer - Constants, version info, and default mode definitions.
 """
 
 APP_NAME = "Audio Tag Writer"
-APP_VERSION = "0.7.13b"
-APP_TIMESTAMP = "2026-09-03 21:19"
+APP_VERSION = "0.7.14"
+APP_TIMESTAMP = "2026-10-15 01:58"
 APP_ORGANIZATION = "SynchroSoft"
 APP_USER_MODEL_ID = "SynchroSoft.ATW"
 GITHUB_REPO = "juren53/audio-tag-writer"
@@ -42,10 +42,15 @@ DEFAULT_MODES = {
         {"label": "Production/Copyright","frame_id": "TPUB",          "widget": "line", "max_chars": 2000,
          "aliases": ["TXXX:©pub", "TXXX:dc:publisher"]},
         {"label": "Original Filename",   "frame_id": "TOFN",          "widget": "line", "max_chars": 2000},
-        {"label": "Collection",          "frame_id": "TXXX:grouping", "widget": "line", "max_chars": 2000},
-        {"label": "Source URL",          "frame_id": "TXXX:WOAS",     "widget": "line", "max_chars": 2000},
-        {"label": "NAC URL",             "frame_id": "TXXX:WXXX",     "widget": "line", "max_chars": 2000},
-        {"label": "Institution ID",      "frame_id": "TXXX:ISRC",     "widget": "line", "max_chars": 2000},
+        # Aliases are the standard frames HAM writes (TIT1, WOAS, WXXX, TSRC)
+        {"label": "Collection",          "frame_id": "TXXX:grouping", "widget": "line", "max_chars": 2000,
+         "aliases": ["TIT1"]},
+        {"label": "Source URL",          "frame_id": "TXXX:WOAS",     "widget": "line", "max_chars": 2000,
+         "aliases": ["WOAS"]},
+        {"label": "NAC URL",             "frame_id": "TXXX:WXXX",     "widget": "line", "max_chars": 2000,
+         "aliases": ["WXXX"]},
+        {"label": "Institution ID",      "frame_id": "TXXX:ISRC",     "widget": "line", "max_chars": 2000,
+         "aliases": ["TSRC"]},
         # --- Hidden auto-written fields (not shown in UI) ---
         {"label": "Artist",           "frame_id": "TPE1", "widget": "hidden", "auto_value": "Harry S. Truman Library"},
         {"label": "Genre",            "frame_id": "TCON", "widget": "hidden", "auto_value": "speech"},
