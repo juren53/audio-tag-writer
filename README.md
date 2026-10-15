@@ -36,7 +36,7 @@ Windows 11 executable is available at:
 
 https://github.com/juren53/audio-tag-writer/releases
 
-**Latest release:** [v0.7.13b](https://github.com/juren53/audio-tag-writer/releases/tag/v0.7.13b) — Linux System Menu integration reworked for LMDE / Cinnamon; adds `install-desktop.sh`
+**Latest release:** [v0.7.14](https://github.com/juren53/audio-tag-writer/releases/tag/v0.7.14) — Archival Recording mode reads HAM-tagged files (Collection, Source URL, NAC URL, Institution ID)
 
 ```powershell
 git clone https://github.com/juren53/audio-tag-writer.git
