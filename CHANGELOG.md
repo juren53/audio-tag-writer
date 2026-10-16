@@ -5,6 +5,23 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.14a] - Fri 16 Oct 2026 15:08 CDT
+
+### Fixed
+- **EXE crashed at startup with "No module named 'theme_manager'"** on any
+  machine without `~/Projects/ThemeManager`. ThemeManager is found via a
+  runtime `sys.path` insertion, which PyInstaller's static analysis never
+  runs, so it was silently left out of the exe (broken since v0.7.10). It
+  only worked on the build machine because the exe fell back to the source
+  folder there. The spec now adds ThemeManager to `pathex` and fails the
+  build if the folder is missing.
+- **EXE had no window/taskbar icon from the Icon Manager Module** — the same
+  `sys.path` problem left `icon_loader` out of the exe, and `resources/icons`
+  was never bundled. Both are now included, and `main.py` resolves the icon
+  directory from `sys._MEIPASS` when frozen.
+
+---
+
 ## [0.7.14] - Thu 15 Oct 2026 01:58 CDT
 
 ### Added

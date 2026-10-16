@@ -1,17 +1,30 @@
 # -*- mode: python ; coding: utf-8 -*-
 # PyInstaller spec for Audio Tag Writer
 # Build: pyinstaller audio-tag-writer.spec
+# Version: 0.7.14a
 
 import os
 
 block_cipher = None
 
+# ThemeManager and Icon Manager Module are consumed via runtime sys.path insertions
+# (see theme.py and main.py), which PyInstaller's static analysis never executes —
+# without them on pathex the modules are silently left out of the exe. ThemeManager's
+# absence crashed the exe at startup with "No module named 'theme_manager'" (v0.7.14a).
+THEME_MANAGER_PATH = os.path.expanduser('~/Projects/ThemeManager')
+IMM_PATH = os.path.expanduser('~/Projects/Icon_Manager_Module')
+for _required in (os.path.join(THEME_MANAGER_PATH, 'theme_manager'),
+                  os.path.join(IMM_PATH, 'icon_loader.py')):
+    if not os.path.exists(_required):
+        raise SystemExit(f'{_required} not found — required for the build.')
+
 a = Analysis(
     ['src/main.py'],
-    pathex=['src'],
+    pathex=['src', THEME_MANAGER_PATH, IMM_PATH],
     binaries=[],
     datas=[
         ('assets', 'assets'),
+        ('resources/icons', 'resources/icons'),
         ('CHANGELOG.md', '.'),
         ('README.md', '.'),
     ],
@@ -23,6 +36,8 @@ a = Analysis(
         'mutagen.flac',
         'mutagen.id3',
         'mutagen._util',
+        'theme_manager',
+        'icon_loader',
     ],
     hookspath=[],
     hooksconfig={},
