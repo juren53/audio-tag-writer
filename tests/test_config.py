@@ -127,14 +127,25 @@ def test_reset_mode_to_default_restores_fields(tmp_path):
 
 def test_save_load_roundtrip(tmp_path):
     cfg = make_config(tmp_path)
-    cfg.current_theme = 'Dark'
+    cfg.current_theme = 'dark'
     cfg.active_mode = 'Music'
     cfg.save_config()
 
     cfg2 = make_config(tmp_path)   # same temp config_file
     cfg2.load_config()
-    assert cfg2.current_theme == 'Dark'
+    assert cfg2.current_theme == 'dark'
     assert cfg2.active_mode == 'Music'
+
+
+def test_legacy_theme_name_migrated_on_load(tmp_path):
+    """Pre-v0.7.10 display names (e.g. 'Dark') load as ThemeManager keys."""
+    cfg = make_config(tmp_path)
+    cfg.current_theme = 'Dark'
+    cfg.save_config()
+
+    cfg2 = make_config(tmp_path)
+    cfg2.load_config()
+    assert cfg2.current_theme == 'dark'
 
 
 def test_builtin_modes_overwrite_stale_frame_ids(tmp_path):
