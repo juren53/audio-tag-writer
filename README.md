@@ -36,7 +36,7 @@ Windows 11 executable is available at:
 
 https://github.com/juren53/audio-tag-writer/releases
 
-**Latest release:** [v0.7.14](https://github.com/juren53/audio-tag-writer/releases/tag/v0.7.14) — Archival Recording mode reads HAM-tagged files (Collection, Source URL, NAC URL, Institution ID)
+**Latest release:** [v0.7.14a](https://github.com/juren53/audio-tag-writer/releases/tag/v0.7.14a) — Fixes EXE startup crash ("No module named 'theme_manager'") and missing window icon
 
 ```powershell
 git clone https://github.com/juren53/audio-tag-writer.git
