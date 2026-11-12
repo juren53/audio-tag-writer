@@ -59,6 +59,13 @@ Use `.\release.ps1 -Title "<summary>"` (rehearse with `-DryRun`); procedure in `
 It refuses to publish unless GitHub CI is green for the exact commit and the local tests pass,
 then builds, attaches `audio-tag-writer.exe` + `.sha256`, and tags that commit.
 
+### EXE self-test
+`build_exe.ps1` runs `audio-tag-writer.exe --self-test build\selftest.json` (`run_self_test()` in
+`src/main.py`) and fails the build on any failed check. When adding a module imported via a runtime
+`sys.path` insertion, or a bundled data file, add a check there and add the path to the spec's
+`pathex`/`datas`. Runtime `sys.path` insertions of source folders must be skipped when
+`sys.frozen` is set, or the EXE silently uses the source copy on the build machine (v0.7.14a).
+
 ## Architecture
 
 ### Modular Package Structure (v0.7.x)

@@ -51,3 +51,37 @@ if ($LASTEXITCODE -eq 0) {
     Write-Error "PyInstaller build failed (exit code $LASTEXITCODE)."
     exit $LASTEXITCODE
 }
+
+# ── Self-test the EXE ────────────────────────────────────────────
+# The windowed EXE has no console, so it writes a JSON report. It checks that every
+# runtime-imported module is bundled (the v0.7.14a "No module named 'theme_manager'"
+# crash), Mutagen works, the docs/icons are bundled and the main window builds.
+$Report = Join-Path $ScriptDir "build\selftest.json"
+if (Test-Path $Report) { Remove-Item -Force $Report }
+Write-Host "Running EXE self-test ..."
+$proc = Start-Process -FilePath $ExePath -ArgumentList "--self-test", "`"$Report`"" -PassThru
+# A crash at import time shows PyInstaller's "Unhandled exception" dialog and never exits
+$proc | Wait-Process -Timeout 120 -ErrorAction SilentlyContinue
+if (-not $proc.HasExited) {
+    # Kill the bootloader and its child (onefile runs the app in a child process)
+    Get-CimInstance Win32_Process -Filter "ParentProcessId=$($proc.Id)" |
+        ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+    Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+    Write-Error "EXE self-test did not finish in 120 s; the EXE probably crashed at startup (error dialog). Run dist\audio-tag-writer.exe to see the error."
+    exit 1
+}
+if (-not (Test-Path $Report)) {
+    Write-Error "EXE self-test wrote no report (exit code $($proc.ExitCode)); the EXE probably crashed at startup."
+    exit 1
+}
+$st = Get-Content $Report -Raw -Encoding UTF8 | ConvertFrom-Json
+$failed = @()
+foreach ($p in $st.checks.PSObject.Properties) {
+    $mark = if ($p.Value) { "[ OK ]" } else { $failed += $p.Name; "[FAIL]" }
+    Write-Host "  $mark $($p.Name)"
+}
+if ($failed.Count -gt 0 -or $proc.ExitCode -ne 0) {
+    Write-Error "EXE self-test failed: $($failed -join ', '). Details: $Report"
+    exit 1
+}
+Write-Host "EXE self-test passed ($(@($st.checks.PSObject.Properties).Count) checks)."

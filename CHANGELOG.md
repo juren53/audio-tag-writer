@@ -5,6 +5,25 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **EXE self-test** (`audio-tag-writer.exe --self-test report.json`). `build_exe.ps1`
+  runs it after every build and fails the build if any check fails. It checks that the
+  modules imported at runtime (ThemeManager, Icon Manager, pyqt-app-info, Mutagen,
+  PyQt6) are importable *and* load from inside the EXE, that Mutagen can write and
+  read an ID3 tag, that README/CHANGELOG are bundled, and that the main window builds.
+  It would have stopped the v0.7.14a "No module named 'theme_manager'" EXE.
+- **`release.ps1`**: publishes a GitHub release only when CI is green for the commit
+  and the local tests and the EXE self-test pass. See `docs/RELEASING.md`.
+
+### Changed
+- The EXE no longer adds `~/Projects/ThemeManager` or `~/Projects/Icon_Manager_Module`
+  to its import path; it uses only its bundled copies. On the build machine that
+  fallback had hidden the missing ThemeManager in v0.7.10 to v0.7.14.
+
+---
+
 ## [0.7.14a] - Fri 16 Oct 2026 15:08 CDT
 
 ### Fixed

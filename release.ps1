@@ -137,7 +137,7 @@ if ($SkipBuild) {
     Step "Using existing EXE (-SkipBuild)"
     if (-not (Test-Path $ExePath)) { Fail "$ExePath not found. Run without -SkipBuild." }
 } else {
-    Step "Building (build_exe.ps1)"
+    Step "Building (build_exe.ps1: PyInstaller + EXE self-test)"
     try { & (Join-Path $Root "build_exe.ps1") } catch { Fail "build_exe.ps1 failed: $_" }
     if ($LASTEXITCODE -ne 0 -or -not (Test-Path $ExePath)) { Fail "build_exe.ps1 failed." }
 }

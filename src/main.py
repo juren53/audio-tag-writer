@@ -16,8 +16,11 @@ logger = logging.getLogger(__name__)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # IMM setup at module level so _init_win32() fires before QApplication is created.
+# The frozen EXE must use only its bundled copy: falling back to the source folder hid
+# a missing module on the build machine (v0.7.14a), and the self-test couldn't see it.
 _IMM_PATH = os.path.expanduser("~/Projects/Icon_Manager_Module")
-if os.path.isdir(_IMM_PATH) and _IMM_PATH not in sys.path:
+if (not getattr(sys, 'frozen', False)
+        and os.path.isdir(_IMM_PATH) and _IMM_PATH not in sys.path):
     sys.path.insert(0, _IMM_PATH)
 
 _app_icons = None
@@ -154,10 +157,96 @@ class MainWindow(NavigationMixin, FileOpsMixin, MenuMixin, ThemeMixin, HelpMixin
 
 
 # ------------------------------------------------------------------
+# Self-test (used by build_exe.ps1 to verify the frozen bundle)
+# ------------------------------------------------------------------
+
+def run_self_test(report_path: str) -> int:
+    """
+    Verify the (frozen) build without showing a window: every runtime-imported
+    module is importable AND comes from the bundle, Mutagen can write and read an
+    ID3 tag, the docs and icons are bundled, and the main window builds.
+    Writes a JSON report to report_path; returns 0 if all checks pass.
+    A windowed EXE has no console, hence the report file instead of stdout.
+    """
+    import importlib
+    import json
+    import tempfile
+
+    frozen = bool(getattr(sys, 'frozen', False))
+    bundle = getattr(sys, '_MEIPASS', '')
+    report = {'app': f"{APP_NAME} {APP_VERSION}", 'frozen': frozen, 'bundle_dir': bundle,
+              'checks': {}, 'info': {}}
+    checks = report['checks']
+
+    def _in_bundle(path: str) -> bool:
+        return os.path.normcase(os.path.abspath(path)).startswith(
+            os.path.normcase(os.path.abspath(bundle)) + os.sep)
+
+    # Runtime sys.path imports are invisible to PyInstaller's analysis (v0.7.14a crash)
+    for mod in ('theme_manager', 'icon_loader', 'pyqt_app_info', 'mutagen', 'PyQt6.QtWidgets'):
+        try:
+            m = importlib.import_module(mod)
+            checks[f'import {mod}'] = True
+            where = getattr(m, '__file__', None) or ''
+            report['info'][f'{mod} from'] = where
+            if frozen:
+                checks[f'{mod} is bundled'] = bool(where) and _in_bundle(where)
+        except Exception as e:
+            checks[f'import {mod}'] = False
+            report['info'][f'import {mod} error'] = repr(e)
+
+    # Mutagen end to end: write an ID3 tag to a temp file and read it back
+    try:
+        check_mutagen_available()
+        from mutagen.id3 import ID3, TIT2
+        fd, tmp = tempfile.mkstemp(suffix='.mp3')
+        os.close(fd)
+        try:
+            tags = ID3()
+            tags['TIT2'] = TIT2(encoding=3, text=['ATW self-test é'])
+            tags.save(tmp)
+            checks['mutagen id3 round-trip'] = str(ID3(tmp)['TIT2']) == 'ATW self-test é'
+        finally:
+            os.remove(tmp)
+    except Exception as e:
+        checks['mutagen id3 round-trip'] = False
+        report['info']['mutagen error'] = repr(e)
+
+    # Docs must be in the bundle itself (HelpMixin._find_file also falls back to the source tree)
+    for doc in ('README.md', 'CHANGELOG.md'):
+        checks[f'{doc} bundled'] = os.path.isfile(os.path.join(bundle, doc)) if frozen \
+            else HelpMixin._find_file(doc) is not None
+
+    # Qt platform plugin + full window construction (never shown).  Config writes are
+    # disabled and the last-file restore is suppressed, so the user's config is untouched.
+    try:
+        config.save_config = lambda *a, **k: None
+        config.selected_file = None
+        app = QApplication.instance() or QApplication([sys.argv[0]])
+        report['info']['qt platform'] = app.platformName()
+        checks['app icon loads'] = not get_app_icon().isNull()
+        window = MainWindow()
+        checks['main window builds'] = (window.metadata_panel is not None
+                                        and window.audio_panel is not None)
+        window.deleteLater()
+    except Exception as e:
+        checks['main window builds'] = False
+        report['info']['main window error'] = repr(e)
+
+    report['passed'] = all(checks.values())
+    with open(report_path, 'w', encoding='utf-8') as f:
+        json.dump(report, f, indent=2, ensure_ascii=False)
+    return 0 if report['passed'] else 1
+
+
+# ------------------------------------------------------------------
 # Application entry point
 # ------------------------------------------------------------------
 
 def main():
+    if len(sys.argv) >= 3 and sys.argv[1] == '--self-test':
+        return run_self_test(sys.argv[2])
+
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     app.setOrganizationName(APP_ORGANIZATION)

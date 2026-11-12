@@ -56,7 +56,11 @@ Other options:
   have succeeded. If it's still running, the script waits for it. Right after a push it retries for up
   to a minute until the run appears. If the run failed, it stops and prints the run's link.
 - The local test suite passes (on this machine it uses the HSTL test MP3 when present)
-- The PyInstaller build succeeds, and the EXE's ProductVersion equals `APP_VERSION`
+- The PyInstaller build succeeds and the **EXE self-test** passes. `build_exe.ps1` runs
+  `audio-tag-writer.exe --self-test build\selftest.json`. It checks that every runtime-imported
+  module loads from inside the EXE, Mutagen round-trips an ID3 tag, README/CHANGELOG are bundled
+  and the main window builds. A crash at startup is caught by a 120-second timeout.
+- The EXE's ProductVersion equals `APP_VERSION`
 
 The notes get a Download section (size, SHA-256) and a **Full Changelog** compare link to the
 previous release. The tag is created on GitHub at the exact commit that was checked and built (`--target <sha>`).
