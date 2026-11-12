@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 # PyInstaller spec for Audio Tag Writer
 # Build: pyinstaller audio-tag-writer.spec
-# Version: 0.7.14a
+# Version: 0.7.15
 
 import os
 

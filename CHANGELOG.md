@@ -5,7 +5,7 @@ All notable changes to the Audio Tag Writer project will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.7.15] - Thu 12 Nov 2026 10:52 CST
 
 ### Added
 - **EXE self-test** (`audio-tag-writer.exe --self-test report.json`). `build_exe.ps1`
@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The EXE no longer adds `~/Projects/ThemeManager` or `~/Projects/Icon_Manager_Module`
   to its import path; it uses only its bundled copies. On the build machine that
   fallback had hidden the missing ThemeManager in v0.7.10 to v0.7.14.
+- **CI now runs the 17 real-MP3 tests** against a small committed sample MP3
+  (`tests/fixtures/archival_sample.mp3`) instead of skipping them, and lists any
+  skipped test by name.
 
 ---
 
