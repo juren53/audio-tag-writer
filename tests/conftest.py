@@ -123,17 +123,23 @@ OVERALL RESULT: {overall}
     except Exception as exc:
         print(f'\nWarning: could not write test report: {exc}')
 
-# Real MP3s from the HSTL test corpus (available on dev machine, skipped on CI)
+# Real MP3 from the HSTL test corpus (dev machine only).  When it is absent (e.g. on
+# GitHub Actions CI) the committed synthetic sample is used instead, so the real-file
+# tests always run — they used to be skipped on CI, leaving MP3 read/write untested.
+# Regenerate the sample with: python tests/fixtures/make_sample_mp3.py
 _TEST_MP3_DIR = r'C:\Users\juren\Projects\HST-Metadata\Audio\Test-mp3s'
 _TEST_MP3 = os.path.join(_TEST_MP3_DIR, 'sr65-11-1.mp3')
+_SAMPLE_MP3 = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures', 'archival_sample.mp3')
 
 
 @pytest.fixture
 def real_mp3():
-    """Path to a real, tagged HST MP3 file. Skip if not available (e.g. CI)."""
-    if not os.path.isfile(_TEST_MP3):
-        pytest.skip(f'Real MP3 not available: {_TEST_MP3}')
-    return _TEST_MP3
+    """Path to a real, tagged MP3: the HSTL corpus file if present, else the committed sample."""
+    if os.path.isfile(_TEST_MP3):
+        return _TEST_MP3
+    if not os.path.isfile(_SAMPLE_MP3):
+        pytest.fail(f'Test MP3 missing: neither {_TEST_MP3} nor {_SAMPLE_MP3} exists', pytrace=False)
+    return _SAMPLE_MP3
 
 
 @pytest.fixture

@@ -30,4 +30,5 @@ jobs:
           pip install mutagen pytest
 
       - name: Run tests
-        run: python -m pytest tests/ -v --tb=short
+        # -rs lists every skipped test with its reason, so a skip can't hide in the summary
+        run: python -m pytest tests/ -v --tb=short -rs
