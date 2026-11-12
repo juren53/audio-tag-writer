@@ -54,6 +54,11 @@ This applies to:
 - Point releases/patches: `v0.X.Ya`, `v0.X.Yb` (e.g., v0.7.12a)
 - Update version in: `src/audio_tag_writer/constants.py` (APP_VERSION, APP_TIMESTAMP), `src/main.py` (header comment), `audio-tag-writer.spec` (version comment), `README.md`, `CHANGELOG.md`
 
+### Releasing
+Use `.\release.ps1 -Title "<summary>"` (rehearse with `-DryRun`); procedure in `docs/RELEASING.md`.
+It refuses to publish unless GitHub CI is green for the exact commit and the local tests pass,
+then builds, attaches `audio-tag-writer.exe` + `.sha256`, and tags that commit.
+
 ## Architecture
 
 ### Modular Package Structure (v0.7.x)
